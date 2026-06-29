@@ -2,6 +2,7 @@ package io.github.darkstarworks.ancientCityPro
 
 import io.github.darkstarworks.ancientCityPro.commands.AcpCommand
 import io.github.darkstarworks.ancientCityPro.database.DatabaseManager
+import io.github.darkstarworks.ancientCityPro.gui.MenuService
 import io.github.darkstarworks.ancientCityPro.listeners.CityDeathListener
 import io.github.darkstarworks.ancientCityPro.listeners.CityDiscoveryListener
 import io.github.darkstarworks.ancientCityPro.listeners.CityPresenceListener
@@ -64,6 +65,9 @@ class AncientCityPro : JavaPlugin() {
     lateinit var presenceListener: io.github.darkstarworks.ancientCityPro.listeners.CityPresenceListener
         private set
 
+    lateinit var menuService: MenuService
+        private set
+
     // Plugin-wide coroutine scope (SupervisorJob so one failed job doesn't tear
     // down the rest). Cancelled in onDisable.
     private val pluginJob = SupervisorJob()
@@ -87,6 +91,7 @@ class AncientCityPro : JavaPlugin() {
         containerLootManager = ContainerLootManager(this)
         statsManager = StatsManager(this)
         banManager = BanManager(this)
+        menuService = MenuService(this)
 
         launchAsync {
             try {

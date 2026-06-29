@@ -22,7 +22,8 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             return true
         }
         when (args.getOrNull(0)?.lowercase()) {
-            null, "help" -> sendHelp(sender)
+            null, "menu" -> openMenu(sender)
+            "help" -> sendHelp(sender)
             "list" -> handleList(sender)
             "info" -> handleInfo(sender, args.getOrNull(1))
             "approve" -> handleApprove(sender, args.getOrNull(1))
@@ -37,8 +38,14 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         return true
     }
 
+    private fun openMenu(sender: CommandSender) {
+        val player = sender as? Player ?: run { sender.sendMessage("§cThe menu is players-only. Try §f/acp list§c."); return }
+        plugin.menuService.openCityList(player)
+    }
+
     private fun sendHelp(sender: CommandSender) {
         sender.sendMessage("§5§lAncientCityPro §7— admin commands")
+        sender.sendMessage("§f/acp menu §7— open the admin GUI")
         sender.sendMessage("§f/acp list §7— list discovered cities (approved + pending)")
         sender.sendMessage("§f/acp info <id> §7— details of a city")
         sender.sendMessage("§f/acp approve <id> §7— activate a pending city")
@@ -180,7 +187,7 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         return when (args.size) {
-            1 -> listOf("list", "info", "approve", "delete", "tp", "ban", "unban", "bans", "resetloot", "help")
+            1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "ban", "unban", "bans", "resetloot", "help")
                 .filter { it.startsWith(args[0].lowercase()) }
             2 -> when (args[0].lowercase()) {
                 "info", "approve", "delete", "tp", "ban", "unban", "bans", "resetloot" ->
