@@ -196,6 +196,23 @@ class CityManager(private val plugin: AncientCityPro) {
         }
     }
 
+    /** Records the snapshot file name on a city (DB + cache). */
+    suspend fun setSnapshotFile(id: Int, fileName: String?) = withContext(Dispatchers.IO) {
+        val city = cache[id] ?: return@withContext
+        try {
+            plugin.databaseManager.connection.use { conn ->
+                conn.prepareStatement("UPDATE cities SET snapshot_file = ? WHERE id = ?").use { stmt ->
+                    stmt.setString(1, fileName)
+                    stmt.setInt(2, id)
+                    stmt.executeUpdate()
+                }
+            }
+            cache[id] = city.copy(snapshotFile = fileName)
+        } catch (e: Exception) {
+            plugin.logger.warning("[CityManager] setSnapshotFile($id) failed: ${e.message}")
+        }
+    }
+
     /** The APPROVED city whose region envelope contains [loc], or null. Used by
      *  loot + protection — pending cities are inactive. */
     fun getCachedCityAt(loc: Location): City? =
