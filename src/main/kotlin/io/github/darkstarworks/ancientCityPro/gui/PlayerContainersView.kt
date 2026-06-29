@@ -21,6 +21,7 @@ class PlayerContainersView(
     private val city: City,
     private val target: UUID,
     private val copies: List<ContainerLootManager.PlayerCopy>,
+    private val templates: Map<ContainerLootManager.ContainerPos, Array<org.bukkit.inventory.ItemStack?>>,
     private val page: Int = 0,
 ) : VcGui(6, Component.text("§5City #${city.id} — Player Loot"), Holder(), "acp.admin") {
 
@@ -54,18 +55,19 @@ class PlayerContainersView(
                     plugin,
                     Component.text("§5$targetName @ ${c.pos.x},${c.pos.y},${c.pos.z}"),
                     c.contents,
+                    template = templates[c.pos],
                     back = { pl -> menu.openPlayerContainers(pl, city, target) },
                 ).open(ctx.player)
             })
         }
 
         if (p > 0) set(48, guiItem(Material.ARROW, "<white>◀ Previous") { ctx ->
-            PlayerContainersView(plugin, menu, city, target, copies, p - 1).open(ctx.player)
+            PlayerContainersView(plugin, menu, city, target, copies, templates, p - 1).open(ctx.player)
         })
         set(49, guiItem(Material.PLAYER_HEAD, "<gray>$targetName",
             listOf("<gray>${copies.size} looted containers", "<gray>Page <white>${p + 1}<gray>/<white>$pages")))
         if (p < pages - 1) set(50, guiItem(Material.ARROW, "<white>Next ▶") { ctx ->
-            PlayerContainersView(plugin, menu, city, target, copies, p + 1).open(ctx.player)
+            PlayerContainersView(plugin, menu, city, target, copies, templates, p + 1).open(ctx.player)
         })
         set(45, guiItem(Material.ARROW, "<white>◀ Back") { ctx -> menu.openPlayerList(ctx.player, city) })
         set(53, guiItem(Material.BARRIER, "<red>Close") { ctx -> ctx.player.closeInventory() })

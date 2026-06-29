@@ -46,12 +46,15 @@ class MenuService(private val plugin: AncientCityPro) {
         }
     }
 
-    /** A specific player's looted-container copies in a city (fetched async). */
+    /** A specific player's looted-container copies in a city (fetched async),
+     *  paired with the original templates so the contents view can diff them. */
     fun openPlayerContainers(player: Player, city: City, target: java.util.UUID) {
         plugin.launchAsync {
             val copies = plugin.containerLootManager.listPlayerCopies(city.id, target)
+            val templates = plugin.containerLootManager.listTemplates(city.id)
+                .associate { it.pos to it.contents }
             plugin.scheduler.runAtEntity(player, Runnable {
-                if (player.isOnline) PlayerContainersView(plugin, this@MenuService, city, target, copies).open(player)
+                if (player.isOnline) PlayerContainersView(plugin, this@MenuService, city, target, copies, templates).open(player)
             })
         }
     }
