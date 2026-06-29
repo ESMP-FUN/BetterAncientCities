@@ -2,8 +2,10 @@ package io.github.darkstarworks.ancientCityPro
 
 import io.github.darkstarworks.ancientCityPro.database.DatabaseManager
 import io.github.darkstarworks.ancientCityPro.listeners.CityDiscoveryListener
+import io.github.darkstarworks.ancientCityPro.listeners.ContainerLootListener
 import io.github.darkstarworks.ancientCityPro.managers.CityDiscoveryManager
 import io.github.darkstarworks.ancientCityPro.managers.CityManager
+import io.github.darkstarworks.ancientCityPro.managers.ContainerLootManager
 import io.github.darkstarworks.ancientCityPro.scheduler.SchedulerAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +46,9 @@ class AncientCityPro : JavaPlugin() {
     lateinit var discoveryManager: CityDiscoveryManager
         private set
 
+    lateinit var containerLootManager: ContainerLootManager
+        private set
+
     // Plugin-wide coroutine scope (SupervisorJob so one failed job doesn't tear
     // down the rest). Cancelled in onDisable.
     private val pluginJob = SupervisorJob()
@@ -64,6 +69,7 @@ class AncientCityPro : JavaPlugin() {
         databaseManager = DatabaseManager(this)
         cityManager = CityManager(this)
         discoveryManager = CityDiscoveryManager(this)
+        containerLootManager = ContainerLootManager(this)
 
         launchAsync {
             try {
@@ -71,6 +77,7 @@ class AncientCityPro : JavaPlugin() {
                 cityManager.preload()
                 scheduler.runTask(Runnable {
                     server.pluginManager.registerEvents(CityDiscoveryListener(this@AncientCityPro), this@AncientCityPro)
+                    server.pluginManager.registerEvents(ContainerLootListener(this@AncientCityPro), this@AncientCityPro)
                     // TODO: registerCommand here (main thread).
                     isReady = true
                     logger.info("AncientCityPro ready.")

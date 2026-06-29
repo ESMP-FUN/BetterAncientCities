@@ -21,5 +21,12 @@ discovery:
   # at startup are caught without waiting for a ChunkLoadEvent.
   startup-sweep: true
 
+loot:
+  # Per-player container loot (Lootr-style). Each player gets their own private
+  # copy of a city container's contents; copies refresh on city reset. Only
+  # containers inside the actual generated structure are treated as city loot —
+  # player-placed chests keep vanilla behaviour.
+  enabled: true
+
 debug:
   verbose-logging: false

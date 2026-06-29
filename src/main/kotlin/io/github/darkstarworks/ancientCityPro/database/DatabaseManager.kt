@@ -122,6 +122,38 @@ class DatabaseManager(private val plugin: AncientCityPro) {
                     """.trimIndent()
                 )
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_city_pieces_city ON city_pieces(city_id)")
+
+                // Per-player private container copies (Lootr-style). One row per
+                // (city, container position, player). Cleared per city on reset.
+                stmt.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS player_container_loot (
+                        city_id INT NOT NULL,
+                        x INT NOT NULL, y INT NOT NULL, z INT NOT NULL,
+                        player_uuid VARCHAR(36) NOT NULL,
+                        contents TEXT NOT NULL,
+                        updated_at BIGINT NOT NULL,
+                        PRIMARY KEY (city_id, x, y, z, player_uuid),
+                        FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                // Shared per-container template: the canonical contents every
+                // first-open copy is cloned from (materialized by rolling the
+                // vanilla loot table). PERSISTS across resets so op edits stick.
+                stmt.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS container_template (
+                        city_id INT NOT NULL,
+                        x INT NOT NULL, y INT NOT NULL, z INT NOT NULL,
+                        contents TEXT NOT NULL,
+                        material VARCHAR(64) NOT NULL,
+                        updated_at BIGINT NOT NULL,
+                        PRIMARY KEY (city_id, x, y, z),
+                        FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
             }
         }
     }
