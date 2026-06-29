@@ -35,4 +35,24 @@ class MenuService(private val plugin: AncientCityPro) {
             })
         }
     }
+
+    /** Per-city container browser (templates fetched async). */
+    fun openContainerList(player: Player, city: City) {
+        plugin.launchAsync {
+            val templates = plugin.containerLootManager.listTemplates(city.id)
+            plugin.scheduler.runAtEntity(player, Runnable {
+                if (player.isOnline) ContainerListView(plugin, this@MenuService, city, templates).open(player)
+            })
+        }
+    }
+
+    /** A specific player's looted-container copies in a city (fetched async). */
+    fun openPlayerContainers(player: Player, city: City, target: java.util.UUID) {
+        plugin.launchAsync {
+            val copies = plugin.containerLootManager.listPlayerCopies(city.id, target)
+            plugin.scheduler.runAtEntity(player, Runnable {
+                if (player.isOnline) PlayerContainersView(plugin, this@MenuService, city, target, copies).open(player)
+            })
+        }
+    }
 }

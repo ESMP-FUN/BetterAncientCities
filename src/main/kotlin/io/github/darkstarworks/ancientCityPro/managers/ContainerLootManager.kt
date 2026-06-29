@@ -326,6 +326,34 @@ class ContainerLootManager(private val plugin: AncientCityPro) {
         }
     }
 
+    /** One player's container copies in a city: position + decoded contents. */
+    data class PlayerCopy(val pos: ContainerPos, val contents: Array<ItemStack?>)
+
+    /** Lists a player's per-container copies for a city (for the GUI "what they looted" view). */
+    suspend fun listPlayerCopies(cityId: Int, player: UUID): List<PlayerCopy> = withContext(Dispatchers.IO) {
+        val out = mutableListOf<PlayerCopy>()
+        try {
+            plugin.databaseManager.connection.use { conn ->
+                conn.prepareStatement(
+                    "SELECT x, y, z, contents FROM player_container_loot WHERE city_id = ? AND player_uuid = ? ORDER BY x, y, z"
+                ).use { stmt ->
+                    stmt.setInt(1, cityId)
+                    stmt.setString(2, player.toString())
+                    stmt.executeQuery().use { rs ->
+                        while (rs.next()) {
+                            val pos = ContainerPos(rs.getInt("x"), rs.getInt("y"), rs.getInt("z"))
+                            val contents = decodeContents(rs.getString("contents")) ?: arrayOfNulls(0)
+                            out.add(PlayerCopy(pos, contents))
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            plugin.logger.warning("[ContainerLoot] listPlayerCopies failed (city $cityId / $player): ${e.message}")
+        }
+        out
+    }
+
     // ==== Encoding ====
 
     fun encodeContents(contents: Array<ItemStack?>): String {

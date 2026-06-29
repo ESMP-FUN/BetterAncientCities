@@ -71,6 +71,12 @@ class CityDetailView(
             menu.openPlayerList(ctx.player, city)
         })
 
+        // Container browser.
+        set(14, guiItem(Material.CHEST, "<yellow>Containers",
+            listOf("<gray>Browse this city's containers and", "<gray>inspect their loot.")) { ctx ->
+            menu.openContainerList(ctx.player, city)
+        })
+
         // Force refresh loot now.
         set(15, guiItem(Material.CLOCK, "<gold>Refresh loot now",
             listOf("<gray>Clears every player's loot copies so the", "<gray>whole city is fresh on next open.")) { ctx ->
