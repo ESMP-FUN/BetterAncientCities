@@ -24,9 +24,18 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
-    // Database (SQLite default, MySQL via Hikari — mirrors TCP)
+    // Database (SQLite default, MySQL optional — both via HikariCP).
     implementation("org.xerial:sqlite-jdbc:3.44.1.0")
-    implementation("com.zaxxer:HikariCP:5.1.0")
+    // HikariCP needs slf4j-api at compile time, but Paper ships slf4j at
+    // runtime — exclude it so we don't shade a duplicate.
+    implementation("com.zaxxer:HikariCP:5.1.0") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
+    // MySQL classic-protocol JDBC driver. protobuf-java is only used by the X
+    // DevAPI (jdbc:mysqlx) which we never touch — excluding it drops ~1.7 MB.
+    implementation("com.mysql:mysql-connector-j:8.4.0") {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
@@ -49,14 +58,28 @@ tasks {
     shadowJar {
         archiveClassifier.set("")
         // Do NOT relocate Kotlin stdlib / kotlinx-coroutines (Bukkit must find them).
-        // Do NOT relocate org.sqlite (JNI native binding load would fail).
+        // Do NOT relocate org.sqlite or com.mysql (JDBC drivers load by class name
+        // + ServiceLoader; relocation would break driverClassName / META-INF/services).
         relocate("com.zaxxer.hikari", "io.github.darkstarworks.acp.hikari")
 
-        // Trim unused SQLite native binaries (keep Windows + Linux x86/x64 + Linux-ARM).
-        exclude("org/sqlite/native/FreeBSD/**")
-        exclude("org/sqlite/native/Linux-Android/**")
-        exclude("org/sqlite/native/Linux-Musl/**")
-        exclude("org/sqlite/native/Mac/**")
+        // Strip signature files from the (signed) MySQL connector jar — shading a
+        // signed jar without this throws "Invalid signature file digest" at load.
+        exclude("META-INF/*.SF")
+        exclude("META-INF/*.DSA")
+        exclude("META-INF/*.RSA")
+
+        // slf4j-api is pulled transitively by sqlite-jdbc, but Paper ships it at
+        // runtime — don't shade a duplicate.
+        exclude("org/slf4j/**")
+
+        // Keep only the SQLite natives real servers/dev use: Windows x86_64 (dev),
+        // Linux x86_64 (most servers), Linux aarch64 (ARM servers). Drop the rest.
+        listOf(
+            "Linux/arm", "Linux/armv6", "Linux/armv7", "Linux/ppc64", "Linux/x86",
+            "Windows/aarch64", "Windows/armv7", "Windows/x86",
+            // Defensive: other layouts shipped by some sqlite-jdbc versions.
+            "Mac", "FreeBSD", "Linux-Android", "Linux-Musl",
+        ).forEach { exclude("org/sqlite/native/$it/**") }
     }
 
     jar {
