@@ -105,6 +105,7 @@ class DatabaseManager(private val plugin: AncientCityPro) {
                         created_at BIGINT NOT NULL,
                         last_reset BIGINT,
                         snapshot_file VARCHAR(255),
+                        loot_cycle_start BIGINT,
                         UNIQUE (world, origin_x, origin_y, origin_z)
                     )
                     """.trimIndent()

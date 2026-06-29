@@ -96,6 +96,9 @@ class ContainerLootListener(private val plugin: AncientCityPro) : Listener {
 
     private fun enabled() = plugin.config.getBoolean("loot.enabled", true)
 
+    /** Refresh window in ms (`loot.refresh-hours`); <= 0 disables refresh. */
+    private fun refreshMs(): Long = (plugin.config.getInt("loot.refresh-hours", 12) * 3_600_000L)
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onContainerOpen(event: PlayerInteractEvent) {
         if (!enabled() || !plugin.isReady) return
@@ -149,6 +152,13 @@ class ContainerLootListener(private val plugin: AncientCityPro) : Listener {
                 openVirtual(player, TemplateHolder(city.id, pos), size, TEMPLATE_TITLE, template)
                 player.sendMessage(Component.text("§7Editing the shared loot template. Changes apply to every player's first open."))
             } else {
+                // First looter past the refresh window starts a new per-city cycle:
+                // wipe everyone's copies so the city's loot is fresh again. Editing
+                // the template (above) never triggers a cycle. Lazy — no scheduler.
+                if (plugin.cityManager.beginCycleIfDue(city.id, refreshMs())) {
+                    plugin.containerLootManager.clearCity(city.id)
+                    plugin.cityManager.persistCycleStart(city.id)
+                }
                 val copy = plugin.containerLootManager.loadContents(city.id, pos, player.uniqueId) ?: template
                 openVirtual(player, CopyHolder(city.id, pos), size, COPY_TITLE, copy)
             }

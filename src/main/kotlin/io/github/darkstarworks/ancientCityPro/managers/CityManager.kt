@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import org.bukkit.Location
 import java.sql.Statement
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Owns the in-memory city cache and all `cities`/`city_pieces` SQL (mirrors how
@@ -19,13 +20,24 @@ class CityManager(private val plugin: AncientCityPro) {
 
     private val cache = ConcurrentHashMap<Int, City>()
 
+    /**
+     * Per-city loot-cycle start (epoch ms; 0 = no active cycle). A cycle is a
+     * lazily-evaluated per-city refresh window: the first player to loot a city
+     * with no active (or an expired) cycle starts a new one, which clears
+     * everyone's per-player copies so the city's loot is fresh again. No
+     * scheduler — the timer is only ever checked on a container open — so cities
+     * refresh staggered by when each was first looted, never all at once.
+     */
+    private val cycleStarts = ConcurrentHashMap<Int, AtomicLong>()
+
     /** Loads every city (with its pieces) into the cache. Call once at startup. */
     suspend fun preload() = withContext(Dispatchers.IO) {
         cache.clear()
+        cycleStarts.clear()
         plugin.databaseManager.connection.use { conn ->
             conn.prepareStatement(
                 "SELECT id, world, min_x, min_y, min_z, max_x, max_y, max_z, " +
-                    "origin_x, origin_y, origin_z, created_at, last_reset, snapshot_file FROM cities"
+                    "origin_x, origin_y, origin_z, created_at, last_reset, snapshot_file, loot_cycle_start FROM cities"
             ).use { stmt ->
                 stmt.executeQuery().use { rs ->
                     while (rs.next()) {
@@ -44,6 +56,8 @@ class CityManager(private val plugin: AncientCityPro) {
                             lastReset = rs.getLong("last_reset").takeIf { !rs.wasNull() },
                             snapshotFile = rs.getString("snapshot_file"),
                         )
+                        val cycle = rs.getLong("loot_cycle_start")
+                        if (!rs.wasNull() && cycle > 0L) cycleStarts[id] = AtomicLong(cycle)
                     }
                 }
             }
@@ -143,6 +157,42 @@ class CityManager(private val plugin: AncientCityPro) {
         }
     }
 
+    /**
+     * Atomically decides whether THIS call should start a new loot cycle for
+     * [cityId]: true when there's no active cycle or the current one is older than
+     * [refreshMs]. Exactly one concurrent caller wins (CAS), so only one clears
+     * the city's copies. The winner should call [ContainerLootManager.clearCity]
+     * and [persistCycleStart]. Synchronous + thread-safe; [refreshMs] <= 0
+     * disables refresh entirely (always false).
+     */
+    fun beginCycleIfDue(cityId: Int, refreshMs: Long): Boolean {
+        if (refreshMs <= 0L) return false
+        val al = cycleStarts.getOrPut(cityId) { AtomicLong(0L) }
+        while (true) {
+            val cur = al.get()
+            val now = System.currentTimeMillis()
+            if (cur != 0L && now - cur < refreshMs) return false // active cycle, not due
+            if (al.compareAndSet(cur, now)) return true          // we started the new cycle
+            // lost the race — another thread advanced it; re-read and re-check
+        }
+    }
+
+    /** Persists the current in-memory cycle start for [cityId] to the DB. */
+    suspend fun persistCycleStart(cityId: Int) = withContext(Dispatchers.IO) {
+        val value = cycleStarts[cityId]?.get() ?: return@withContext
+        try {
+            plugin.databaseManager.connection.use { conn ->
+                conn.prepareStatement("UPDATE cities SET loot_cycle_start = ? WHERE id = ?").use { stmt ->
+                    stmt.setLong(1, value)
+                    stmt.setInt(2, cityId)
+                    stmt.executeUpdate()
+                }
+            }
+        } catch (e: Exception) {
+            plugin.logger.warning("[CityManager] persistCycleStart($cityId) failed: ${e.message}")
+        }
+    }
+
     /** The city whose region envelope contains [loc], or null. */
     fun getCachedCityAt(loc: Location): City? =
         cache.values.firstOrNull { it.containsInRegion(loc) }
@@ -156,7 +206,10 @@ class CityManager(private val plugin: AncientCityPro) {
                 conn.prepareStatement("DELETE FROM cities WHERE id = ?").use { stmt ->
                     stmt.setInt(1, id)
                     val removed = stmt.executeUpdate() > 0
-                    if (removed) cache.remove(id)
+                    if (removed) {
+                        cache.remove(id)
+                        cycleStarts.remove(id)
+                    }
                     removed
                 }
             }

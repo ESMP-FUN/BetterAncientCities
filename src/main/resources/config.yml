@@ -27,6 +27,13 @@ loot:
   # containers inside the actual generated structure are treated as city loot —
   # player-placed chests keep vanilla behaviour.
   enabled: true
+  # Per-city loot refresh window, in hours. The first player to loot a city with
+  # no active (or an expired) cycle starts a fresh 'refresh-hours' window for THAT
+  # city; during it, every player still gets their own private copy. When it
+  # elapses, the next looter triggers a refresh (all copies cleared) and a new
+  # window begins. Per-city + lazy, so cities never all refresh at once. 0 = never
+  # refresh (per-player copies persist indefinitely).
+  refresh-hours: 12
 
 debug:
   verbose-logging: false
