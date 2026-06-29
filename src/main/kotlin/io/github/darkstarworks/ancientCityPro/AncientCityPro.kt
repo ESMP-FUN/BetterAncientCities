@@ -1,5 +1,7 @@
 package io.github.darkstarworks.ancientCityPro
 
+import io.github.darkstarworks.ancientCityPro.database.DatabaseManager
+import io.github.darkstarworks.ancientCityPro.managers.CityManager
 import io.github.darkstarworks.ancientCityPro.scheduler.SchedulerAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +33,12 @@ class AncientCityPro : JavaPlugin() {
     lateinit var scheduler: SchedulerAdapter
         private set
 
+    lateinit var databaseManager: DatabaseManager
+        private set
+
+    lateinit var cityManager: CityManager
+        private set
+
     // Plugin-wide coroutine scope (SupervisorJob so one failed job doesn't tear
     // down the rest). Cancelled in onDisable.
     private val pluginJob = SupervisorJob()
@@ -48,9 +56,13 @@ class AncientCityPro : JavaPlugin() {
 
         // Async-first init: heavy setup (DB, caches, discovery sweep) runs off the
         // main thread; listeners/commands register on the main thread once ready.
+        databaseManager = DatabaseManager(this)
+        cityManager = CityManager(this)
+
         launchAsync {
             try {
-                // TODO(discovery): init DatabaseManager + CityStore, preload city cache.
+                databaseManager.initialize()
+                cityManager.preload()
                 // TODO(discovery): register CityDiscoveryListener + run startup sweep.
                 scheduler.runTask(Runnable {
                     // TODO: registerCommand / registerListeners here (main thread).
@@ -68,6 +80,7 @@ class AncientCityPro : JavaPlugin() {
         isReady = false
         scheduler.cancelAllTasks()
         pluginScope.cancel()
+        if (::databaseManager.isInitialized) databaseManager.close()
         logger.info("AncientCityPro disabled.")
     }
 }
