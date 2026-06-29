@@ -166,6 +166,13 @@ class ContainerLootListener(private val plugin: AncientCityPro) : Listener {
                 if (plugin.cityManager.beginCycleIfDue(city.id, refreshMs())) {
                     plugin.containerLootManager.clearCity(city.id)
                     plugin.cityManager.persistCycleStart(city.id)
+                    // Optionally restore the structure too (revert sculk spread /
+                    // griefing) on the cycle roll. Opt-in — a restore rewrites blocks.
+                    if (plugin.config.getBoolean("snapshot.auto-reset-on-refresh", false) &&
+                        plugin.snapshotManager.hasSnapshot(city.id)
+                    ) {
+                        plugin.snapshotManager.restore(city)
+                    }
                 }
                 val existing = plugin.containerLootManager.loadContents(city.id, pos, player.uniqueId)
                 if (existing == null) {
