@@ -36,6 +36,7 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             "check" -> handleCheck(sender)
             "snapshot" -> handleSnapshot(sender, args.getOrNull(1))
             "reset" -> handleReset(sender, args.getOrNull(1))
+            "reload" -> { plugin.reloadConfig(); sender.sendMessage("§aAncientCityPro config reloaded.") }
             "ban" -> handleBan(sender, args)
             "unban" -> handleUnban(sender, args.getOrNull(1), args.getOrNull(2))
             "bans" -> handleBans(sender, args.getOrNull(1))
@@ -61,6 +62,7 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         sender.sendMessage("§f/acp check §7— is the block you're looking at protected? (ignores your bypass)")
         sender.sendMessage("§f/acp snapshot <id> §7— capture the city's structure for restoration")
         sender.sendMessage("§f/acp reset <id> §7— restore the city from its snapshot")
+        sender.sendMessage("§f/acp reload §7— reload config.yml")
         sender.sendMessage("§f/acp ban <id> <player> [reason] §7— loot-ban a player from a city")
         sender.sendMessage("§f/acp unban <id> <player> §7— lift a loot ban")
         sender.sendMessage("§f/acp bans <id> §7— list a city's loot bans")
@@ -264,7 +266,7 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         return when (args.size) {
-            1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "check", "snapshot", "reset", "ban", "unban", "bans", "resetloot", "help")
+            1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "check", "snapshot", "reset", "reload", "ban", "unban", "bans", "resetloot", "help")
                 .filter { it.startsWith(args[0].lowercase()) }
             2 -> when (args[0].lowercase()) {
                 "info", "approve", "delete", "tp", "open", "snapshot", "reset", "ban", "unban", "bans", "resetloot" ->
