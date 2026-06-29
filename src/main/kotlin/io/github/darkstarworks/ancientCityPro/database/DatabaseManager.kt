@@ -157,6 +157,21 @@ class DatabaseManager(private val plugin: AncientCityPro) {
                     )
                     """.trimIndent()
                 )
+                // Per-city loot bans. A banned player can still walk through the
+                // city but can't open its containers.
+                stmt.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS city_bans (
+                        city_id INT NOT NULL,
+                        player_uuid VARCHAR(36) NOT NULL,
+                        reason VARCHAR(255),
+                        banned_by VARCHAR(36),
+                        banned_at BIGINT NOT NULL,
+                        PRIMARY KEY (city_id, player_uuid),
+                        FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
                 // Shared per-container template: the canonical contents every
                 // first-open copy is cloned from (materialized by rolling the
                 // vanilla loot table). PERSISTS across resets so op edits stick.

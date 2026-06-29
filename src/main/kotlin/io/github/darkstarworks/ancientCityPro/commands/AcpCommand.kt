@@ -8,6 +8,7 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
+import java.util.UUID
 
 /**
  * `/acp` admin command. Fallback to the GUI (`/acp menu`, added later); for now
@@ -27,6 +28,10 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             "approve" -> handleApprove(sender, args.getOrNull(1))
             "delete" -> handleDelete(sender, args.getOrNull(1))
             "tp" -> handleTp(sender, args.getOrNull(1))
+            "ban" -> handleBan(sender, args)
+            "unban" -> handleUnban(sender, args.getOrNull(1), args.getOrNull(2))
+            "bans" -> handleBans(sender, args.getOrNull(1))
+            "resetloot" -> handleResetLoot(sender, args.getOrNull(1), args.getOrNull(2))
             else -> sender.sendMessage("§cUnknown subcommand. §7Try §f/acp help§7.")
         }
         return true
@@ -39,6 +44,10 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         sender.sendMessage("§f/acp approve <id> §7— activate a pending city")
         sender.sendMessage("§f/acp delete <id> §7— unregister a city")
         sender.sendMessage("§f/acp tp <id> §7— teleport to a city")
+        sender.sendMessage("§f/acp ban <id> <player> [reason] §7— loot-ban a player from a city")
+        sender.sendMessage("§f/acp unban <id> <player> §7— lift a loot ban")
+        sender.sendMessage("§f/acp bans <id> §7— list a city's loot bans")
+        sender.sendMessage("§f/acp resetloot <id> <player> §7— let a player loot the city fresh")
     }
 
     private fun handleList(sender: CommandSender) {
@@ -97,6 +106,67 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         player.sendMessage("§7Teleporting to city §f#${city.id}§7.")
     }
 
+    @Suppress("DEPRECATION")
+    private fun resolveTarget(sender: CommandSender, name: String?): UUID? {
+        if (name.isNullOrBlank()) {
+            sender.sendMessage("§cProvide a player name.")
+            return null
+        }
+        // Prefer online, else cached offline profile; admin command, so a lookup is fine.
+        plugin.server.getPlayerExact(name)?.let { return it.uniqueId }
+        val off = plugin.server.getOfflinePlayer(name)
+        if (!off.hasPlayedBefore() && !off.isOnline) {
+            sender.sendMessage("§cNo player named '$name' has been seen on this server.")
+            return null
+        }
+        return off.uniqueId
+    }
+
+    private fun handleBan(sender: CommandSender, args: Array<out String>) {
+        val city = resolve(sender, args.getOrNull(1)) ?: return
+        val target = resolveTarget(sender, args.getOrNull(2)) ?: return
+        val reason = if (args.size > 3) args.drop(3).joinToString(" ") else null
+        val by = (sender as? Player)?.uniqueId
+        plugin.launchAsync {
+            val ok = plugin.banManager.ban(city.id, target, reason, by)
+            sender.sendMessage(if (ok) "§aLoot-banned ${args[2]} from city #${city.id}${reason?.let { " (§7$it§a)" } ?: ""}." else "§cBan failed.")
+        }
+    }
+
+    private fun handleUnban(sender: CommandSender, idArg: String?, name: String?) {
+        val city = resolve(sender, idArg) ?: return
+        val target = resolveTarget(sender, name) ?: return
+        plugin.launchAsync {
+            val ok = plugin.banManager.unban(city.id, target)
+            sender.sendMessage(if (ok) "§aLifted loot ban on $name for city #${city.id}." else "§7$name was not banned from city #${city.id}.")
+        }
+    }
+
+    private fun handleBans(sender: CommandSender, idArg: String?) {
+        val city = resolve(sender, idArg) ?: return
+        plugin.launchAsync {
+            val bans = plugin.banManager.listBans(city.id)
+            if (bans.isEmpty()) {
+                sender.sendMessage("§7No loot bans for city #${city.id}.")
+                return@launchAsync
+            }
+            sender.sendMessage("§5Loot bans §7for city #${city.id} (${bans.size}):")
+            for (b in bans) {
+                @Suppress("DEPRECATION") val name = plugin.server.getOfflinePlayer(b.playerUuid).name ?: b.playerUuid.toString()
+                sender.sendMessage("§f$name §7${b.reason?.let { "— $it" } ?: ""}")
+            }
+        }
+    }
+
+    private fun handleResetLoot(sender: CommandSender, idArg: String?, name: String?) {
+        val city = resolve(sender, idArg) ?: return
+        val target = resolveTarget(sender, name) ?: return
+        plugin.launchAsync {
+            val n = plugin.containerLootManager.clearPlayer(city.id, target)
+            sender.sendMessage("§aCleared $n container copy/copies for $name in city #${city.id} — they can loot it fresh.")
+        }
+    }
+
     private fun resolve(sender: CommandSender, idArg: String?): City? {
         val id = idArg?.toIntOrNull() ?: run {
             sender.sendMessage("§cUsage: provide a numeric city id (see §f/acp list§c).")
@@ -110,9 +180,15 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         return when (args.size) {
-            1 -> listOf("list", "info", "approve", "delete", "tp", "help").filter { it.startsWith(args[0].lowercase()) }
+            1 -> listOf("list", "info", "approve", "delete", "tp", "ban", "unban", "bans", "resetloot", "help")
+                .filter { it.startsWith(args[0].lowercase()) }
             2 -> when (args[0].lowercase()) {
-                "info", "approve", "delete", "tp" -> plugin.cityManager.all().map { it.id.toString() }
+                "info", "approve", "delete", "tp", "ban", "unban", "bans", "resetloot" ->
+                    plugin.cityManager.all().map { it.id.toString() }
+                else -> emptyList()
+            }
+            3 -> when (args[0].lowercase()) {
+                "ban", "unban", "resetloot" -> plugin.server.onlinePlayers.map { it.name }
                 else -> emptyList()
             }
             else -> emptyList()

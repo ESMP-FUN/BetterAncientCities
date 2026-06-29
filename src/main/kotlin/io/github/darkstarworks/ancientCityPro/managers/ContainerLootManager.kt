@@ -304,6 +304,28 @@ class ContainerLootManager(private val plugin: AncientCityPro) {
         }
     }
 
+    /**
+     * Drops one player's container copies for a city, so they re-roll from the
+     * template on their next open — the "reset this player's loot" admin action.
+     * Returns rows removed.
+     */
+    suspend fun clearPlayer(cityId: Int, player: UUID): Int = withContext(Dispatchers.IO) {
+        try {
+            plugin.databaseManager.connection.use { conn ->
+                conn.prepareStatement(
+                    "DELETE FROM player_container_loot WHERE city_id = ? AND player_uuid = ?"
+                ).use { stmt ->
+                    stmt.setInt(1, cityId)
+                    stmt.setString(2, player.toString())
+                    stmt.executeUpdate()
+                }
+            }
+        } catch (e: Exception) {
+            plugin.logger.warning("[ContainerLoot] clearPlayer failed (city $cityId / $player): ${e.message}")
+            0
+        }
+    }
+
     // ==== Encoding ====
 
     fun encodeContents(contents: Array<ItemStack?>): String {

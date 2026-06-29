@@ -9,6 +9,7 @@ import io.github.darkstarworks.ancientCityPro.listeners.ContainerLootListener
 import io.github.darkstarworks.ancientCityPro.listeners.ProtectionListener
 import io.github.darkstarworks.ancientCityPro.managers.CityDiscoveryManager
 import io.github.darkstarworks.ancientCityPro.managers.CityManager
+import io.github.darkstarworks.ancientCityPro.managers.BanManager
 import io.github.darkstarworks.ancientCityPro.managers.ContainerLootManager
 import io.github.darkstarworks.ancientCityPro.managers.StatsManager
 import io.github.darkstarworks.ancientCityPro.scheduler.SchedulerAdapter
@@ -57,6 +58,9 @@ class AncientCityPro : JavaPlugin() {
     lateinit var statsManager: StatsManager
         private set
 
+    lateinit var banManager: BanManager
+        private set
+
     lateinit var presenceListener: io.github.darkstarworks.ancientCityPro.listeners.CityPresenceListener
         private set
 
@@ -82,11 +86,13 @@ class AncientCityPro : JavaPlugin() {
         discoveryManager = CityDiscoveryManager(this)
         containerLootManager = ContainerLootManager(this)
         statsManager = StatsManager(this)
+        banManager = BanManager(this)
 
         launchAsync {
             try {
                 databaseManager.initialize()
                 cityManager.preload()
+                banManager.preload()
                 scheduler.runTask(Runnable {
                     server.pluginManager.registerEvents(CityDiscoveryListener(this@AncientCityPro), this@AncientCityPro)
                     server.pluginManager.registerEvents(ContainerLootListener(this@AncientCityPro), this@AncientCityPro)

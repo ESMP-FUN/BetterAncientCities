@@ -123,6 +123,14 @@ class ContainerLootListener(private val plugin: AncientCityPro) : Listener {
         // Sneak + admin = edit the shared template; otherwise a per-player copy.
         val isAdminEdit = player.isSneaking && player.hasPermission("acp.admin")
 
+        // Loot-banned players can't open city containers (admins editing the
+        // template are exempt). Cancel vanilla open + tell them, but don't serve.
+        if (!isAdminEdit && plugin.banManager.isBanned(city.id, player.uniqueId)) {
+            event.isCancelled = true
+            player.sendMessage(Component.text("§cYou are banned from looting this Ancient City."))
+            return
+        }
+
         event.isCancelled = true
 
         val now = System.currentTimeMillis()
