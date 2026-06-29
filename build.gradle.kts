@@ -1,6 +1,8 @@
+import org.gradle.api.attributes.java.TargetJvmVersion
+
 plugins {
-    kotlin("jvm") version "2.3.0-Beta1"
-    id("com.gradleup.shadow") version "8.3.0"
+    kotlin("jvm") version "2.3.20"
+    id("com.gradleup.shadow") version "8.3.6"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
@@ -15,10 +17,9 @@ repositories {
 }
 
 dependencies {
-    // Paper API. Ancient City discovery uses World.getStructures(...) /
-    // GeneratedStructure / StructurePiece (Structure.ANCIENT_CITY), all present
-    // in 1.21.1. api-version stays '1.21'.
-    compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
+    // Paper API — 26.x track (the `-mc26` build). plugin.yml's api-version '26.1'
+    // keeps this jar to 26.x servers; the master build targets 1.21.1 + '1.21'.
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -45,18 +46,39 @@ dependencies {
 
 tasks {
     runServer {
-        minecraftVersion("1.21.1")
+        minecraftVersion("26.1.2")
     }
 }
 
-val targetJavaVersion = 21
+// Use JDK 25 to compile against the Paper 26.x API, but output Java 21 bytecode so
+// the Shadow jar packager (older bundled ASM) can process the class files.
+// api-version: '26.1' in plugin.yml is what keeps this jar to 26.x servers.
 kotlin {
-    jvmToolchain(targetJavaVersion)
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
+}
+
+tasks.withType<JavaCompile> {
+    sourceCompatibility = JavaVersion.VERSION_21.toString()
+    targetCompatibility = JavaVersion.VERSION_21.toString()
+}
+
+// Accept JVM 25 libraries (Paper 26.x requires it) while still outputting JVM 21.
+configurations.matching {
+    it.name in setOf("compileClasspath", "runtimeClasspath")
+}.configureEach {
+    attributes {
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
+    }
 }
 
 tasks {
     shadowJar {
-        archiveClassifier.set("")
+        archiveClassifier.set("mc26")
         // Do NOT relocate Kotlin stdlib / kotlinx-coroutines (Bukkit must find them).
         // Do NOT relocate org.sqlite or com.mysql (JDBC drivers load by class name
         // + ServiceLoader; relocation would break driverClassName / META-INF/services).
