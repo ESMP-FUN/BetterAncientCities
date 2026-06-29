@@ -1,6 +1,7 @@
 package io.github.darkstarworks.ancientCityPro.listeners
 
 import io.github.darkstarworks.ancientCityPro.AncientCityPro
+import io.github.darkstarworks.ancientCityPro.models.City
 import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -30,21 +31,23 @@ class ProtectionListener(private val plugin: AncientCityPro) : Listener {
     private fun pad() = plugin.config.getInt("protection.piece-padding", 3)
     private fun enabled() = plugin.config.getBoolean("protection.enabled", true)
 
-    /** Whether [block] sits inside a (padded) structure piece of some city. */
-    private fun isProtected(block: Block): Boolean {
-        // Fast reject via the padded region AABB, then the per-piece test.
-        val city = plugin.cityManager.getCachedCityInPaddedRegion(block.location, pad()) ?: return false
-        return city.inStructurePiece(block.location, pad())
+    /** The (approved) city protecting [block], or null. Fast region reject, then
+     *  the per-piece padded test. */
+    private fun protectingCity(block: Block): City? {
+        val city = plugin.cityManager.getCachedCityInPaddedRegion(block.location, pad()) ?: return null
+        return if (city.inStructurePiece(block.location, pad())) city else null
     }
+
+    private fun isProtected(block: Block): Boolean = protectingCity(block) != null
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onBlockBreak(event: BlockBreakEvent) {
         if (!enabled() || !plugin.isReady) return
         if (event.player.hasPermission("acp.bypass.protection")) return
-        if (isProtected(event.block)) {
-            event.isCancelled = true
-            notifyDenied(event.player)
-        }
+        val city = protectingCity(event.block) ?: return
+        event.isCancelled = true
+        plugin.statsManager.incrementGrief(city.id, event.player.uniqueId)
+        notifyDenied(event.player)
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -52,10 +55,10 @@ class ProtectionListener(private val plugin: AncientCityPro) : Listener {
         if (!enabled() || !plugin.isReady) return
         if (event.player.hasPermission("acp.bypass.protection")) return
         if (!plugin.config.getBoolean("protection.block-place", true)) return
-        if (isProtected(event.block)) {
-            event.isCancelled = true
-            notifyDenied(event.player)
-        }
+        val city = protectingCity(event.block) ?: return
+        event.isCancelled = true
+        plugin.statsManager.incrementGrief(city.id, event.player.uniqueId)
+        notifyDenied(event.player)
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

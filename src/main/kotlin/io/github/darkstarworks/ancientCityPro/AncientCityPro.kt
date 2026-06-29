@@ -2,12 +2,15 @@ package io.github.darkstarworks.ancientCityPro
 
 import io.github.darkstarworks.ancientCityPro.commands.AcpCommand
 import io.github.darkstarworks.ancientCityPro.database.DatabaseManager
+import io.github.darkstarworks.ancientCityPro.listeners.CityDeathListener
 import io.github.darkstarworks.ancientCityPro.listeners.CityDiscoveryListener
+import io.github.darkstarworks.ancientCityPro.listeners.CityPresenceListener
 import io.github.darkstarworks.ancientCityPro.listeners.ContainerLootListener
 import io.github.darkstarworks.ancientCityPro.listeners.ProtectionListener
 import io.github.darkstarworks.ancientCityPro.managers.CityDiscoveryManager
 import io.github.darkstarworks.ancientCityPro.managers.CityManager
 import io.github.darkstarworks.ancientCityPro.managers.ContainerLootManager
+import io.github.darkstarworks.ancientCityPro.managers.StatsManager
 import io.github.darkstarworks.ancientCityPro.scheduler.SchedulerAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +54,12 @@ class AncientCityPro : JavaPlugin() {
     lateinit var containerLootManager: ContainerLootManager
         private set
 
+    lateinit var statsManager: StatsManager
+        private set
+
+    lateinit var presenceListener: io.github.darkstarworks.ancientCityPro.listeners.CityPresenceListener
+        private set
+
     // Plugin-wide coroutine scope (SupervisorJob so one failed job doesn't tear
     // down the rest). Cancelled in onDisable.
     private val pluginJob = SupervisorJob()
@@ -72,6 +81,7 @@ class AncientCityPro : JavaPlugin() {
         cityManager = CityManager(this)
         discoveryManager = CityDiscoveryManager(this)
         containerLootManager = ContainerLootManager(this)
+        statsManager = StatsManager(this)
 
         launchAsync {
             try {
@@ -81,6 +91,9 @@ class AncientCityPro : JavaPlugin() {
                     server.pluginManager.registerEvents(CityDiscoveryListener(this@AncientCityPro), this@AncientCityPro)
                     server.pluginManager.registerEvents(ContainerLootListener(this@AncientCityPro), this@AncientCityPro)
                     server.pluginManager.registerEvents(ProtectionListener(this@AncientCityPro), this@AncientCityPro)
+                    server.pluginManager.registerEvents(CityDeathListener(this@AncientCityPro), this@AncientCityPro)
+                    presenceListener = CityPresenceListener(this@AncientCityPro)
+                    server.pluginManager.registerEvents(presenceListener, this@AncientCityPro)
                     getCommand("ancientcity")?.let {
                         val executor = AcpCommand(this@AncientCityPro)
                         it.setExecutor(executor)
@@ -101,6 +114,7 @@ class AncientCityPro : JavaPlugin() {
 
     override fun onDisable() {
         isReady = false
+        if (::presenceListener.isInitialized) presenceListener.flushAll()
         scheduler.cancelAllTasks()
         pluginScope.cancel()
         if (::databaseManager.isInitialized) databaseManager.close()

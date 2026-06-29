@@ -140,6 +140,23 @@ class DatabaseManager(private val plugin: AncientCityPro) {
                     )
                     """.trimIndent()
                 )
+                // Per-(city, player) admin stats. One row, upserted as a player
+                // loots / triggers protection / spends time / dies in a city.
+                stmt.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS city_player_stats (
+                        city_id INT NOT NULL,
+                        player_uuid VARCHAR(36) NOT NULL,
+                        containers_looted INT NOT NULL DEFAULT 0,
+                        grief_attempts INT NOT NULL DEFAULT 0,
+                        time_ms BIGINT NOT NULL DEFAULT 0,
+                        deaths INT NOT NULL DEFAULT 0,
+                        last_seen BIGINT NOT NULL DEFAULT 0,
+                        PRIMARY KEY (city_id, player_uuid),
+                        FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
                 // Shared per-container template: the canonical contents every
                 // first-open copy is cloned from (materialized by rolling the
                 // vanilla loot table). PERSISTS across resets so op edits stick.

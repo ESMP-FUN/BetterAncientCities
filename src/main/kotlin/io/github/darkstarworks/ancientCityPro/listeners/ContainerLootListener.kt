@@ -159,8 +159,12 @@ class ContainerLootListener(private val plugin: AncientCityPro) : Listener {
                     plugin.containerLootManager.clearCity(city.id)
                     plugin.cityManager.persistCycleStart(city.id)
                 }
-                val copy = plugin.containerLootManager.loadContents(city.id, pos, player.uniqueId) ?: template
-                openVirtual(player, CopyHolder(city.id, pos), size, COPY_TITLE, copy)
+                val existing = plugin.containerLootManager.loadContents(city.id, pos, player.uniqueId)
+                if (existing == null) {
+                    // First open of this container this cycle = a fresh loot event.
+                    plugin.statsManager.incrementLooted(city.id, player.uniqueId)
+                }
+                openVirtual(player, CopyHolder(city.id, pos), size, COPY_TITLE, existing ?: template)
             }
         }
     }
