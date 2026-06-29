@@ -57,5 +57,17 @@ protection:
   # Show an action-bar message when a break/place is denied.
   notify-denied: true
 
+snapshot:
+  # Hard cap on how many block-cells a single city snapshot may capture, to
+  # protect memory on pathological structures. ~3M is far above a real city.
+  max-cells: 3000000
+  # Capture a baseline snapshot automatically when a city is approved, so a
+  # reset target always exists without a manual /acp snapshot.
+  auto-capture-on-approve: true
+  # When a city's loot refresh cycle rolls over, also restore its blocks from the
+  # snapshot (reverts sculk spread + griefing). OFF by default: a restore rewrites
+  # blocks and can be disruptive if players are inside. Requires a snapshot.
+  auto-reset-on-refresh: false
+
 debug:
   verbose-logging: false

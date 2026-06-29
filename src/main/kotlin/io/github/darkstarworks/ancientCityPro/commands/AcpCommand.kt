@@ -141,6 +141,12 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         plugin.launchAsync {
             val ok = plugin.cityManager.approveCity(city.id)
             sender.sendMessage(if (ok) "§aApproved city #${city.id} — loot and protection are now active." else "§cApproval failed.")
+            if (ok && plugin.config.getBoolean("snapshot.auto-capture-on-approve", true)) {
+                plugin.cityManager.byId(city.id)?.let { c ->
+                    val n = plugin.snapshotManager.capture(c)
+                    if (n >= 0) sender.sendMessage("§7Baseline snapshot captured ($n cells).")
+                }
+            }
         }
     }
 

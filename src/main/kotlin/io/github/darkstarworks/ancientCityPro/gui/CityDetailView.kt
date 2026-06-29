@@ -38,6 +38,7 @@ class CityDetailView(
                 "<gray>Pieces: <white>${city.pieces.size}",
                 "<gray>Status: ${if (city.approved) "<green>active" else "<yellow>pending approval"}",
                 "<gray>Players inside now: <white>$occupants",
+                "<gray>Snapshot: ${if (plugin.snapshotManager.hasSnapshot(city.id)) "<green>captured" else "<red>none"}",
             )
         ))
 
@@ -57,8 +58,11 @@ class CityDetailView(
                 listOf("<gray>Activate loot + protection for this city.")) { ctx ->
                 plugin.launchAsync {
                     val ok = plugin.cityManager.approveCity(city.id)
+                    if (ok && plugin.config.getBoolean("snapshot.auto-capture-on-approve", true)) {
+                        plugin.cityManager.byId(city.id)?.let { plugin.snapshotManager.capture(it) }
+                    }
                     plugin.scheduler.runAtEntity(ctx.player, Runnable {
-                        ctx.player.sendMessage(if (ok) "§aApproved city #${city.id}." else "§cApproval failed.")
+                        ctx.player.sendMessage(if (ok) "§aApproved city #${city.id} (baseline snapshot captured)." else "§cApproval failed.")
                         if (ok) plugin.cityManager.byId(city.id)?.let { menu.openCityDetail(ctx.player, it) }
                     })
                 }
@@ -85,6 +89,31 @@ class CityDetailView(
                 ctx.player.sendMessage("§aRefreshed city #${city.id} — cleared $n loot copy/copies.")
             }
         })
+
+        // Capture snapshot.
+        set(16, guiItem(Material.SPYGLASS, "<aqua>Capture snapshot",
+            listOf("<gray>Save the city's current structure as the", "<gray>restore point (overwrites any existing).")) { ctx ->
+            ctx.player.sendMessage("§7Capturing snapshot of city #${city.id}…")
+            plugin.launchAsync {
+                val n = plugin.snapshotManager.capture(city)
+                plugin.scheduler.runAtEntity(ctx.player, Runnable {
+                    ctx.player.sendMessage(if (n >= 0) "§aSnapshot captured ($n cells)." else "§cSnapshot failed (see console).")
+                    plugin.cityManager.byId(city.id)?.let { menu.openCityDetail(ctx.player, it) }
+                })
+            }
+        })
+
+        // Reset to snapshot (only when one exists).
+        if (plugin.snapshotManager.hasSnapshot(city.id)) {
+            set(17, guiItem(Material.RECOVERY_COMPASS, "<gold>Reset to snapshot",
+                listOf("<gray>Restore the structure from the snapshot.", "<gray>Reverts sculk spread + griefing.")) { ctx ->
+                ctx.player.sendMessage("§7Restoring city #${city.id} from snapshot…")
+                plugin.launchAsync {
+                    val n = plugin.snapshotManager.restore(city)
+                    ctx.player.sendMessage(if (n >= 0) "§aRestored city #${city.id} ($n cells)." else "§cRestore failed (see console).")
+                }
+            })
+        }
 
         // Delete.
         set(26, guiItem(Material.RED_CONCRETE, "<red>Delete city",
