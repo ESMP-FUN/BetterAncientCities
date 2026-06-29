@@ -49,7 +49,7 @@ class ContainerContentsView(
         if (template != null) {
             // Diff legend in the nav row.
             set(navRow * 9 + 4, guiItem(Material.PAPER, "<gray>Diff vs. original loot",
-                listOf("<red>Red <gray>= taken (removed)", "<yellow>Yellow <gray>= partly taken / changed", "<white>Plain <gray>= untouched")))
+                listOf("<red>Red pane <gray>= taken (removed)", "<aqua>Glint <gray>= partly taken / changed", "<white>Plain <gray>= untouched")))
         }
 
         for (i in 0 until capacity) {

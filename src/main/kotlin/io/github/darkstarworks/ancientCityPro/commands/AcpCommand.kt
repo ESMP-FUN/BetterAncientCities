@@ -34,6 +34,8 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             "tp" -> handleTp(sender, args.getOrNull(1))
             "open" -> handleOpen(sender, args.getOrNull(1))
             "check" -> handleCheck(sender)
+            "snapshot" -> handleSnapshot(sender, args.getOrNull(1))
+            "reset" -> handleReset(sender, args.getOrNull(1))
             "ban" -> handleBan(sender, args)
             "unban" -> handleUnban(sender, args.getOrNull(1), args.getOrNull(2))
             "bans" -> handleBans(sender, args.getOrNull(1))
@@ -57,6 +59,8 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         sender.sendMessage("§f/acp delete <id> §7— unregister a city")
         sender.sendMessage("§f/acp tp <id> §7— teleport to a city")
         sender.sendMessage("§f/acp check §7— is the block you're looking at protected? (ignores your bypass)")
+        sender.sendMessage("§f/acp snapshot <id> §7— capture the city's structure for restoration")
+        sender.sendMessage("§f/acp reset <id> §7— restore the city from its snapshot")
         sender.sendMessage("§f/acp ban <id> <player> [reason] §7— loot-ban a player from a city")
         sender.sendMessage("§f/acp unban <id> <player> §7— lift a loot ban")
         sender.sendMessage("§f/acp bans <id> §7— list a city's loot bans")
@@ -219,6 +223,28 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         }
     }
 
+    private fun handleSnapshot(sender: CommandSender, idArg: String?) {
+        val city = resolve(sender, idArg) ?: return
+        sender.sendMessage("§7Capturing snapshot of city #${city.id} — this may take a few seconds…")
+        plugin.launchAsync {
+            val n = plugin.snapshotManager.capture(city)
+            sender.sendMessage(if (n >= 0) "§aSnapshot captured for city #${city.id} ($n cells)." else "§cSnapshot failed (see console).")
+        }
+    }
+
+    private fun handleReset(sender: CommandSender, idArg: String?) {
+        val city = resolve(sender, idArg) ?: return
+        if (!plugin.snapshotManager.hasSnapshot(city.id)) {
+            sender.sendMessage("§cCity #${city.id} has no snapshot. Capture one first with §f/acp snapshot ${city.id}§c.")
+            return
+        }
+        sender.sendMessage("§7Restoring city #${city.id} from snapshot…")
+        plugin.launchAsync {
+            val n = plugin.snapshotManager.restore(city)
+            sender.sendMessage(if (n >= 0) "§aRestored city #${city.id} ($n cells)." else "§cRestore failed (see console).")
+        }
+    }
+
     private fun resolve(sender: CommandSender, idArg: String?): City? {
         val id = idArg?.toIntOrNull() ?: run {
             sender.sendMessage("§cUsage: provide a numeric city id (see §f/acp list§c).")
@@ -232,10 +258,10 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         return when (args.size) {
-            1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "check", "ban", "unban", "bans", "resetloot", "help")
+            1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "check", "snapshot", "reset", "ban", "unban", "bans", "resetloot", "help")
                 .filter { it.startsWith(args[0].lowercase()) }
             2 -> when (args[0].lowercase()) {
-                "info", "approve", "delete", "tp", "open", "ban", "unban", "bans", "resetloot" ->
+                "info", "approve", "delete", "tp", "open", "snapshot", "reset", "ban", "unban", "bans", "resetloot" ->
                     plugin.cityManager.all().map { it.id.toString() }
                 else -> emptyList()
             }

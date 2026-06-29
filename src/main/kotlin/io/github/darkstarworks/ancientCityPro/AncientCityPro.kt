@@ -12,7 +12,9 @@ import io.github.darkstarworks.ancientCityPro.managers.CityDiscoveryManager
 import io.github.darkstarworks.ancientCityPro.managers.CityManager
 import io.github.darkstarworks.ancientCityPro.managers.BanManager
 import io.github.darkstarworks.ancientCityPro.managers.ContainerLootManager
+import io.github.darkstarworks.ancientCityPro.managers.SnapshotManager
 import io.github.darkstarworks.ancientCityPro.managers.StatsManager
+import java.io.File
 import io.github.darkstarworks.ancientCityPro.scheduler.SchedulerAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +70,12 @@ class AncientCityPro : JavaPlugin() {
     lateinit var menuService: MenuService
         private set
 
+    lateinit var snapshotManager: SnapshotManager
+        private set
+
+    /** Directory holding per-city snapshot files. */
+    val snapshotsDir: File by lazy { File(dataFolder, "snapshots").apply { mkdirs() } }
+
     // Plugin-wide coroutine scope (SupervisorJob so one failed job doesn't tear
     // down the rest). Cancelled in onDisable.
     private val pluginJob = SupervisorJob()
@@ -92,6 +100,7 @@ class AncientCityPro : JavaPlugin() {
         statsManager = StatsManager(this)
         banManager = BanManager(this)
         menuService = MenuService(this)
+        snapshotManager = SnapshotManager(this)
 
         launchAsync {
             try {
