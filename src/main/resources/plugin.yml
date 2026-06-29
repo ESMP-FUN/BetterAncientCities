@@ -1,7 +1,7 @@
 name: AncientCityPro
 version: '${version}'
 main: io.github.darkstarworks.ancientCityPro.AncientCityPro
-api-version: '1.21'
+api-version: '26.1'
 folia-supported: true
 authors: [darkstarworks]
 description: Turns naturally-generated Ancient Cities into renewable, multiplayer-friendly content — auto-discovery, per-player chest loot, griefing protection, and (later) automatic resets.
