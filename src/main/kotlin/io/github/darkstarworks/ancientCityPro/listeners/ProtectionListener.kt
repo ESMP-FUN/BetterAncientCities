@@ -1,8 +1,6 @@
 package io.github.darkstarworks.ancientCityPro.listeners
 
 import io.github.darkstarworks.ancientCityPro.AncientCityPro
-import io.github.darkstarworks.ancientCityPro.managers.CityPalette
-import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -14,25 +12,29 @@ import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 
 /**
- * Palette-aware griefing protection for registered Ancient Cities.
+ * Griefing protection for registered Ancient Cities — bounds-based per structure
+ * piece, NOT palette-based.
  *
- * A block is protected iff it's inside a city's region envelope (expanded by
- * `protection.bounds-padding` to cover edge decoration the structure bbox
- * doesn't enclose) AND its type is in [CityPalette]. This protects the structure
- * — including outlying sculk/wool/bricks in the pad margin — while leaving the
- * natural deepslate, ores, and caves around it fully mineable.
+ * Ancient city templates are built primarily from plain deepslate and basalt
+ * (e.g. 928 plain Deepslate in a single entrance piece), so a material allow-list
+ * would leave most of the structure unprotected. Instead a block is protected iff
+ * it falls inside a `city_pieces` bounding box (expanded by
+ * `protection.piece-padding` to cover edge decoration + a thin shell), regardless
+ * of its type. Natural terrain *between* the scattered pieces — the bulk of the
+ * 220×220 envelope — stays fully mineable.
  *
  * Players with `acp.bypass.protection` (default op) are exempt.
  */
 class ProtectionListener(private val plugin: AncientCityPro) : Listener {
 
-    private fun pad() = plugin.config.getInt("protection.bounds-padding", 8)
+    private fun pad() = plugin.config.getInt("protection.piece-padding", 3)
     private fun enabled() = plugin.config.getBoolean("protection.enabled", true)
 
-    /** Whether [block] is a protected city-structure block (palette + padded region). */
+    /** Whether [block] sits inside a (padded) structure piece of some city. */
     private fun isProtected(block: Block): Boolean {
-        if (!CityPalette.contains(block.type)) return false
-        return plugin.cityManager.getCachedCityInPaddedRegion(block.location, pad()) != null
+        // Fast reject via the padded region AABB, then the per-piece test.
+        val city = plugin.cityManager.getCachedCityInPaddedRegion(block.location, pad()) ?: return false
+        return city.inStructurePiece(block.location, pad())
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -50,12 +52,7 @@ class ProtectionListener(private val plugin: AncientCityPro) : Listener {
         if (!enabled() || !plugin.isReady) return
         if (event.player.hasPermission("acp.bypass.protection")) return
         if (!plugin.config.getBoolean("protection.block-place", true)) return
-        // Only block placing INTO the structure footprint (a palette block placed,
-        // or any block placed against the structure's interior); keep it simple —
-        // deny placing palette-type blocks inside the padded region.
-        if (CityPalette.contains(event.block.type) &&
-            plugin.cityManager.getCachedCityInPaddedRegion(event.block.location, pad()) != null
-        ) {
+        if (isProtected(event.block)) {
             event.isCancelled = true
             notifyDenied(event.player)
         }

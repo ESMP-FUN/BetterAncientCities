@@ -41,9 +41,17 @@ data class City(
      * Whether [loc] is inside an actual generated structure piece — the test that
      * decides if a container at [loc] is city loot vs. a player-built block.
      */
-    fun inStructurePiece(loc: Location): Boolean {
+    fun inStructurePiece(loc: Location): Boolean = inStructurePiece(loc, 0)
+
+    /**
+     * Whether [loc] is inside any structure piece expanded by [pad] blocks. With
+     * [pad] = 0 this is exact piece membership (loot provenance); a small pad is
+     * used by protection to cover edge decoration and a thin shell around each
+     * building while leaving natural terrain *between* pieces untouched.
+     */
+    fun inStructurePiece(loc: Location, pad: Int): Boolean {
         if (loc.world?.name != world) return false
         val x = loc.blockX; val y = loc.blockY; val z = loc.blockZ
-        return pieces.any { it.contains(x, y, z) }
+        return pieces.any { it.expanded(pad).contains(x, y, z) }
     }
 }

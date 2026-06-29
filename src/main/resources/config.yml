@@ -36,14 +36,16 @@ loot:
   refresh-hours: 12
 
 protection:
-  # Palette-aware griefing protection: only Ancient City *structure* blocks
-  # (worked deepslate, sculk, soul fixtures, wool/carpet, chains/lanterns,
-  # containers) are protected — natural deepslate, ores, and caves stay mineable.
+  # Griefing protection, bounds-based per structure piece. Any block inside a
+  # generated structure piece (the actual buildings/corridors/ruins) is protected
+  # regardless of type — because ancient cities are built mostly from plain
+  # deepslate and basalt. Natural terrain BETWEEN the scattered pieces (the bulk
+  # of the 220x220 area) stays fully mineable.
   enabled: true
-  # Blocks to expand the protected region beyond the structure's bounding box, to
-  # cover edge decoration vanilla places a few blocks outside it. ~8 is plenty.
-  bounds-padding: 8
-  # Deny placing structure-palette blocks inside the protected region.
+  # Blocks to expand each structure piece by, covering edge decoration and a thin
+  # shell around each building. Small (~3) — this is per-piece, not whole-area.
+  piece-padding: 3
+  # Deny placing blocks inside a protected structure piece.
   block-place: true
   # Protect structure blocks from creeper/TNT/other explosions.
   block-explosions: true
