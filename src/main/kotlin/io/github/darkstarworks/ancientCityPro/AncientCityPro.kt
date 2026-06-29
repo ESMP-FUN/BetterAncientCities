@@ -100,6 +100,10 @@ class AncientCityPro : JavaPlugin() {
                     server.pluginManager.registerEvents(CityDeathListener(this@AncientCityPro), this@AncientCityPro)
                     presenceListener = CityPresenceListener(this@AncientCityPro)
                     server.pluginManager.registerEvents(presenceListener, this@AncientCityPro)
+                    // Central GUI dispatcher — routes only BaseHolder inventories.
+                    server.pluginManager.registerEvents(
+                        io.github.darkstarworks.ancientCityPro.gui.framework.VcGuiListener(), this@AncientCityPro
+                    )
                     getCommand("ancientcity")?.let {
                         val executor = AcpCommand(this@AncientCityPro)
                         it.setExecutor(executor)
