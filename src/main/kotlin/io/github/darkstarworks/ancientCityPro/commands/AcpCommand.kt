@@ -32,6 +32,7 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             "approve" -> handleApprove(sender, args.getOrNull(1))
             "delete" -> handleDelete(sender, args.getOrNull(1))
             "tp" -> handleTp(sender, args.getOrNull(1))
+            "open" -> handleOpen(sender, args.getOrNull(1))
             "check" -> handleCheck(sender)
             "ban" -> handleBan(sender, args)
             "unban" -> handleUnban(sender, args.getOrNull(1), args.getOrNull(2))
@@ -68,18 +69,25 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             sender.sendMessage("§7No Ancient Cities discovered yet.")
             return
         }
-        sender.sendMessage("§5Ancient Cities §7(${cities.size})§7 — §oclick a line to teleport")
+        sender.sendMessage("§5Ancient Cities §7(${cities.size})")
         for (c in cities) {
             val tag = if (c.approved) "<green>active" else "<yellow>pending"
             val r = c.region
             sender.sendMessage(mm.deserialize(
-                "<click:run_command:'/acp tp ${c.id}'>" +
-                    "<hover:show_text:'<gray>Click to teleport to city <white>#${c.id}'>" +
-                    "<gray>#<white>${c.id} <gray>[$tag<gray>] <white>${c.world} " +
-                    "<gray>(${r.minX}, ${r.minY}, ${r.minZ}) <dark_gray>• ${c.pieces.size} pieces" +
-                    "</hover></click>"
+                "<gray>#<white>${c.id} <gray>[$tag<gray>] <white>${c.world} " +
+                    "<click:run_command:'/acp tp ${c.id}'><hover:show_text:'<gray>Teleport to city <white>#${c.id}'>" +
+                    "<green><bold>[${r.minX} ${r.minY} ${r.minZ}]</bold></green></hover></click> " +
+                    "<dark_gray>• ${c.pieces.size} pieces  " +
+                    "<click:run_command:'/acp open ${c.id}'><hover:show_text:'<gray>Open city <white>#${c.id}<gray> in the GUI'>" +
+                    "<yellow><bold>[menu]</bold></yellow></hover></click>"
             ))
         }
+    }
+
+    private fun handleOpen(sender: CommandSender, idArg: String?) {
+        val player = sender as? Player ?: run { sender.sendMessage("§cPlayers only."); return }
+        val city = resolve(sender, idArg) ?: return
+        plugin.menuService.openCityDetail(player, city)
     }
 
     private fun handleCheck(sender: CommandSender) {
@@ -87,17 +95,26 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
         val block = player.getTargetBlockExact(8) ?: run { sender.sendMessage("§cLook at a block within 8 blocks."); return }
         val pad = plugin.config.getInt("protection.piece-padding", 3)
         val loc = block.location
-        val anyCity = plugin.cityManager.getAnyCityAt(loc)
-        val approvedCity = plugin.cityManager.getCachedCityInPaddedRegion(loc, pad)
-        val inPiece = approvedCity?.inStructurePiece(loc, pad) == true
-        val protectedNow = approvedCity != null && inPiece
+        // Geometry is independent of approval — use ANY city for the rule test.
+        val city = plugin.cityManager.getAnyCityAt(loc)
+        val inPiece = city?.inStructurePiece(loc, pad) == true
+        val protectionEnabled = plugin.config.getBoolean("protection.enabled", true)
+        val activeNow = city != null && city.approved && protectionEnabled && inPiece
+
         sender.sendMessage("§5/acp check §7— §f${block.type.name.lowercase()} §7at §f${loc.blockX}, ${loc.blockY}, ${loc.blockZ}")
         sender.sendMessage("§7In a city region: " +
-            if (anyCity != null) "§a#${anyCity.id}${if (!anyCity.approved) " §e(pending — protection inactive)" else ""}" else "§cno")
+            if (city != null) "§a#${city.id} ${if (city.approved) "§a(active)" else "§e(pending)"}" else "§cno")
         sender.sendMessage("§7Inside a structure piece (±$pad): ${if (inPiece) "§ayes" else "§cno"}")
-        sender.sendMessage("§7Would be protected: ${if (protectedNow) "§a§lYES" else "§cno"}")
-        if (protectedNow && player.hasPermission("acp.bypass.protection")) {
-            sender.sendMessage("§e⚠ You have §facp.bypass.protection§e, so YOU can still break it — test with a non-op account.")
+        // The rule (geometry) vs. whether it's actually enforced right now.
+        sender.sendMessage("§7Protected by the rule: ${if (inPiece) "§a§lYES" else "§cno"}")
+        sender.sendMessage("§7Enforced right now: ${if (activeNow) "§a§lYES" else "§cno"}")
+        when {
+            inPiece && city != null && !city.approved ->
+                sender.sendMessage("§e→ City is pending approval, so protection isn't active yet. Approve it with §f/acp approve ${city.id}§e.")
+            !protectionEnabled && inPiece ->
+                sender.sendMessage("§e→ protection.enabled is false in config.")
+            activeNow && player.hasPermission("acp.bypass.protection") ->
+                sender.sendMessage("§e⚠ You have §facp.bypass.protection§e, so YOU can still break it — test with a non-op account.")
         }
     }
 
@@ -218,7 +235,7 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "check", "ban", "unban", "bans", "resetloot", "help")
                 .filter { it.startsWith(args[0].lowercase()) }
             2 -> when (args[0].lowercase()) {
-                "info", "approve", "delete", "tp", "ban", "unban", "bans", "resetloot" ->
+                "info", "approve", "delete", "tp", "open", "ban", "unban", "bans", "resetloot" ->
                     plugin.cityManager.all().map { it.id.toString() }
                 else -> emptyList()
             }

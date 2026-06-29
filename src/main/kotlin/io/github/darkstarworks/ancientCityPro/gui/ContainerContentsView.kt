@@ -85,10 +85,13 @@ class ContainerContentsView(
         return pane
     }
 
-    /** The player's current item, tagged yellow with the original in its lore. */
+    /** The player's current item, tagged yellow + a glint with the original in
+     *  its lore. The glint is the closest to a "highlight" possible in a normal
+     *  chest inventory — true per-cell background colour needs a resource pack. */
     private fun modifiedItem(cur: ItemStack, tmpl: ItemStack): ItemStack {
         val out = cur.clone()
         out.editMeta { meta ->
+            meta.setEnchantmentGlintOverride(true)
             val baseName = if (meta.hasDisplayName()) meta.displayName()!! else Component.text(itemName(cur))
             meta.displayName(
                 mm.deserialize("<yellow>⚠ ").decoration(TextDecoration.ITALIC, false).append(baseName)

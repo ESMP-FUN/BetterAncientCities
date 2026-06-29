@@ -53,8 +53,8 @@ class PlayerListView(
         slice.forEachIndexed { i, s ->
             set(i, VcGuiItem.wrap(playerHead(s), onClick = { ctx ->
                 when {
-                    ctx.click.isShiftClick && ctx.click.isLeftClick -> menu.openPlayerContainers(ctx.player, city, s.playerUuid)
-                    ctx.click.isLeftClick -> resetLoot(ctx.player, s.playerUuid)
+                    ctx.click.isShiftClick && ctx.click.isLeftClick -> resetLoot(ctx.player, s.playerUuid)
+                    ctx.click.isLeftClick -> menu.openPlayerContainers(ctx.player, city, s.playerUuid)
                     ctx.click.isRightClick -> toggleBan(ctx.player, s.playerUuid)
                 }
             }))
@@ -89,8 +89,8 @@ class PlayerListView(
                 "<gray>Griefing attempts: ${if (s.griefAttempts > 0) "<red>" else "<white>"}${s.griefAttempts}",
                 "<gray>Loot ban: ${if (isBanned) "<red>yes" else "<green>no"}",
                 "",
-                "<yellow>Left-click<gray>: reset their loot (fresh)",
-                "<yellow>Shift+Left<gray>: view what they looted",
+                "<yellow>Left-click<gray>: view what they looted",
+                "<yellow>Shift+Left<gray>: reset their loot (fresh)",
                 "<yellow>Right-click<gray>: ${if (isBanned) "lift loot ban" else "loot-ban"}",
             ).map { mm.deserialize(it).decoration(TextDecoration.ITALIC, false) })
         }
