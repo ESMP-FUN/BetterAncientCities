@@ -1,0 +1,25 @@
+# AncientCityPro configuration
+
+database:
+  # 'sqlite' (default, zero-setup) or 'mysql'
+  type: sqlite
+  # MySQL settings (ignored when type: sqlite)
+  mysql:
+    host: localhost
+    port: 3306
+    database: ancientcitypro
+    username: root
+    password: ""
+
+discovery:
+  # Auto-register naturally-generated Ancient Cities as they load.
+  enabled: true
+  # Clamp the registered region's vertical bounds to the structure's own
+  # Y-extent (recommended). When false, uses the raw structure bounding box.
+  clamp-to-structure-y: true
+  # Run a sweep over already-loaded chunks on plugin enable so cities resident
+  # at startup are caught without waiting for a ChunkLoadEvent.
+  startup-sweep: true
+
+debug:
+  verbose-logging: false

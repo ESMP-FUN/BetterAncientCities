@@ -1,0 +1,23 @@
+name: AncientCityPro
+version: '${version}'
+main: io.github.darkstarworks.ancientCityPro.AncientCityPro
+api-version: '1.21'
+folia-supported: true
+authors: [darkstarworks]
+description: Turns naturally-generated Ancient Cities into renewable, multiplayer-friendly content — auto-discovery, per-player chest loot, griefing protection, and (later) automatic resets.
+website: https://github.com/darkstarworks/AncientCityPro
+
+commands:
+  ancientcity:
+    description: AncientCityPro admin command
+    usage: /acp <subcommand>
+    aliases: [acp]
+    permission: acp.admin
+
+permissions:
+  acp.admin:
+    description: Access to all AncientCityPro admin commands
+    default: op
+  acp.discovery.notify:
+    description: Receive in-game notifications when an Ancient City is auto-discovered
+    default: op
