@@ -44,11 +44,17 @@ class SnapshotManager(private val plugin: AncientCityPro) {
 
     private fun maxCells() = plugin.config.getInt("snapshot.max-cells", 3_000_000)
 
-    /** Block positions of every piece cell, deduped and grouped by chunk key. */
-    private fun cellsByChunk(city: City): Map<Long, MutableList<Triple<Int, Int, Int>>> {
+    /** Capture must cover at least what protection protects — the PADDED piece
+     *  region — so a reset can restore edge decoration that sits just outside the
+     *  exact piece bounds. */
+    private fun capturePad() = plugin.config.getInt("protection.piece-padding", 3)
+
+    /** Block positions of every (padded) piece cell, deduped and grouped by chunk key. */
+    private fun cellsByChunk(city: City, pad: Int): Map<Long, MutableList<Triple<Int, Int, Int>>> {
         val seen = HashSet<Long>()
         val byChunk = HashMap<Long, MutableList<Triple<Int, Int, Int>>>()
-        for (p in city.pieces) {
+        for (piece in city.pieces) {
+            val p = piece.expanded(pad)
             for (x in p.minX..p.maxX) for (y in p.minY..p.maxY) for (z in p.minZ..p.maxZ) {
                 if (!seen.add(blockKey(x, y, z))) continue
                 val ck = (x shr 4).toLong() shl 32 or ((z shr 4).toLong() and 0xffffffffL)
@@ -71,7 +77,7 @@ class SnapshotManager(private val plugin: AncientCityPro) {
             plugin.logger.warning("[Snapshot] World '${city.world}' not loaded; cannot capture city #${city.id}")
             return -1
         }
-        val byChunk = cellsByChunk(city)
+        val byChunk = cellsByChunk(city, capturePad())
         val total = byChunk.values.sumOf { it.size }
         if (total == 0) { plugin.logger.warning("[Snapshot] City #${city.id} has no piece cells to capture"); return -1 }
         if (total > maxCells()) {
@@ -81,6 +87,7 @@ class SnapshotManager(private val plugin: AncientCityPro) {
 
         val origin = Triple(city.region.minX, city.region.minY, city.region.minZ)
         val blocks = HashMap<Triple<Int, Int, Int>, String>(total)
+        var failed = 0
 
         // Read each chunk's cells on its owning region thread.
         for ((_, cells) in byChunk) {
@@ -88,13 +95,17 @@ class SnapshotManager(private val plugin: AncientCityPro) {
             val loc = Location(world, rep.first.toDouble(), rep.second.toDouble(), rep.third.toDouble())
             suspendCancellableCoroutine<Unit> { cont ->
                 plugin.scheduler.runAtLocation(loc, Runnable {
-                    try {
-                        for (c in cells) {
+                    // Ensure the chunk is loaded before reading (Paper loads on access;
+                    // explicit keeps it correct on the owning region thread).
+                    if (!world.isChunkLoaded(rep.first shr 4, rep.third shr 4)) world.getChunkAt(rep.first shr 4, rep.third shr 4)
+                    for (c in cells) {
+                        // Per-cell isolation: one bad block must NOT drop the rest of the chunk.
+                        try {
                             val data = world.getBlockAt(c.first, c.second, c.third).blockData.asString
                             blocks[Triple(c.first - origin.first, c.second - origin.second, c.third - origin.third)] = data
+                        } catch (e: Exception) {
+                            if (failed++ < 5) plugin.logger.warning("[Snapshot] capture read failed at ${c.first},${c.second},${c.third}: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        plugin.logger.warning("[Snapshot] capture chunk read failed: ${e.message}")
                     }
                     cont.resume(Unit) {}
                 })
@@ -106,8 +117,9 @@ class SnapshotManager(private val plugin: AncientCityPro) {
             val file = fileFor(city.id)
             file.writeBytes(CompressionUtil.compressObject(data))
             plugin.cityManager.setSnapshotFile(city.id, file.name)
-            plugin.logger.info("[Snapshot] Captured city #${city.id}: $total cells (${CompressionUtil.formatSize(file.length())})")
-            total
+            plugin.logger.info("[Snapshot] Captured city #${city.id}: stored ${blocks.size}/$total cells" +
+                (if (failed > 0) " ($failed read failures)" else "") + " (${CompressionUtil.formatSize(file.length())}, pad ${capturePad()})")
+            blocks.size
         }
     }
 
@@ -141,28 +153,36 @@ class SnapshotManager(private val plugin: AncientCityPro) {
             byChunk.getOrPut(ck) { mutableListOf() }.add(Location(world, x.toDouble(), y.toDouble(), z.toDouble()) to str)
         }
 
+        val total = data.blocks.size
         val remaining = AtomicInteger(byChunk.size)
         val done = CompletableDeferred<Unit>()
-        var restored = 0
+        val restored = AtomicInteger(0)
+        val failed = AtomicInteger(0)
         for ((_, list) in byChunk) {
-            val loc = list.first().first
-            plugin.scheduler.runAtLocation(loc, Runnable {
-                try {
-                    for ((bloc, str) in list) {
-                        val bd = runCatching { Bukkit.createBlockData(str) }.getOrNull() ?: continue
+            val first = list.first().first
+            plugin.scheduler.runAtLocation(first, Runnable {
+                if (!world.isChunkLoaded(first.blockX shr 4, first.blockZ shr 4)) world.getChunkAt(first.blockX shr 4, first.blockZ shr 4)
+                for ((bloc, str) in list) {
+                    // Per-block isolation: a single parse/set failure must NOT drop
+                    // the rest of the chunk (the cause of contiguous "half-missing").
+                    try {
+                        val bd = Bukkit.createBlockData(str)
                         bloc.block.setBlockData(bd, false) // no physics — avoid cascade updates
-                        restored++
+                        restored.incrementAndGet()
+                    } catch (e: Exception) {
+                        if (failed.getAndIncrement() < 5)
+                            plugin.logger.warning("[Snapshot] restore failed at ${bloc.blockX},${bloc.blockY},${bloc.blockZ} for '$str': ${e.message}")
                     }
-                } catch (e: Exception) {
-                    plugin.logger.warning("[Snapshot] restore chunk write failed: ${e.message}")
                 }
                 if (remaining.decrementAndGet() == 0) done.complete(Unit)
             })
         }
         if (byChunk.isEmpty()) done.complete(Unit)
         done.await()
-        plugin.logger.info("[Snapshot] Restored city #${city.id}: $restored cells")
-        return restored
+        val f = failed.get()
+        plugin.logger.info("[Snapshot] Restored city #${city.id}: placed ${restored.get()}/$total cells" +
+            (if (f > 0) " ($f failures — see warnings above)" else ""))
+        return restored.get()
     }
 
     fun deleteSnapshot(cityId: Int): Boolean = fileFor(cityId).let { if (it.exists()) it.delete() else false }
