@@ -37,7 +37,7 @@ class CityManager(private val plugin: AncientCityPro) {
         plugin.databaseManager.connection.use { conn ->
             conn.prepareStatement(
                 "SELECT id, world, min_x, min_y, min_z, max_x, max_y, max_z, " +
-                    "origin_x, origin_y, origin_z, created_at, last_reset, snapshot_file, loot_cycle_start FROM cities"
+                    "origin_x, origin_y, origin_z, created_at, last_reset, snapshot_file, loot_cycle_start, approved FROM cities"
             ).use { stmt ->
                 stmt.executeQuery().use { rs ->
                     while (rs.next()) {
@@ -55,6 +55,7 @@ class CityManager(private val plugin: AncientCityPro) {
                             createdAt = rs.getLong("created_at"),
                             lastReset = rs.getLong("last_reset").takeIf { !rs.wasNull() },
                             snapshotFile = rs.getString("snapshot_file"),
+                            approved = rs.getInt("approved") != 0,
                         )
                         val cycle = rs.getLong("loot_cycle_start")
                         if (!rs.wasNull() && cycle > 0L) cycleStarts[id] = AtomicLong(cycle)
@@ -109,6 +110,7 @@ class CityManager(private val plugin: AncientCityPro) {
         region: IntBox,
         origin: Triple<Int, Int, Int>,
         pieces: List<IntBox>,
+        approved: Boolean,
     ): City? = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         try {
@@ -117,7 +119,7 @@ class CityManager(private val plugin: AncientCityPro) {
                 try {
                     val cityId = conn.prepareStatement(
                         "INSERT INTO cities (world, min_x, min_y, min_z, max_x, max_y, max_z, " +
-                            "origin_x, origin_y, origin_z, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                            "origin_x, origin_y, origin_z, created_at, approved) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS
                     ).use { stmt ->
                         stmt.setString(1, world)
@@ -125,6 +127,7 @@ class CityManager(private val plugin: AncientCityPro) {
                         stmt.setInt(5, region.maxX); stmt.setInt(6, region.maxY); stmt.setInt(7, region.maxZ)
                         stmt.setInt(8, origin.first); stmt.setInt(9, origin.second); stmt.setInt(10, origin.third)
                         stmt.setLong(11, now)
+                        stmt.setInt(12, if (approved) 1 else 0)
                         stmt.executeUpdate()
                         stmt.generatedKeys.use { if (it.next()) it.getInt(1) else error("no generated city id") }
                     }
@@ -140,7 +143,7 @@ class CityManager(private val plugin: AncientCityPro) {
                         stmt.executeBatch()
                     }
                     conn.commit()
-                    val city = City(cityId, world, region, origin, pieces, now)
+                    val city = City(cityId, world, region, origin, pieces, now, approved = approved)
                     cache[cityId] = city
                     city
                 } catch (e: Exception) {
@@ -193,16 +196,44 @@ class CityManager(private val plugin: AncientCityPro) {
         }
     }
 
-    /** The city whose region envelope contains [loc], or null. */
+    /** The APPROVED city whose region envelope contains [loc], or null. Used by
+     *  loot + protection — pending cities are inactive. */
     fun getCachedCityAt(loc: Location): City? =
+        cache.values.firstOrNull { it.approved && it.containsInRegion(loc) }
+
+    /** The APPROVED city whose region envelope, expanded by [pad], contains [loc]. */
+    fun getCachedCityInPaddedRegion(loc: Location, pad: Int): City? =
+        cache.values.firstOrNull { it.approved && it.containsInPaddedRegion(loc, pad) }
+
+    /** Any city (approved or pending) containing [loc] — for admin/info, not gameplay. */
+    fun getAnyCityAt(loc: Location): City? =
         cache.values.firstOrNull { it.containsInRegion(loc) }
 
-    /** The city whose region envelope, expanded by [pad], contains [loc], or null. */
-    fun getCachedCityInPaddedRegion(loc: Location, pad: Int): City? =
-        cache.values.firstOrNull { it.containsInPaddedRegion(loc, pad) }
+    fun byId(id: Int): City? = cache[id]
 
     /** All cached cities (read-only snapshot). */
     fun all(): Collection<City> = cache.values.toList()
+
+    fun approved(): List<City> = cache.values.filter { it.approved }
+    fun pending(): List<City> = cache.values.filter { !it.approved }
+
+    /** Approves a pending city (activates loot + protection). Returns false if unknown. */
+    suspend fun approveCity(id: Int): Boolean = withContext(Dispatchers.IO) {
+        val city = cache[id] ?: return@withContext false
+        try {
+            plugin.databaseManager.connection.use { conn ->
+                conn.prepareStatement("UPDATE cities SET approved = 1 WHERE id = ?").use { stmt ->
+                    stmt.setInt(1, id)
+                    stmt.executeUpdate()
+                }
+            }
+            cache[id] = city.copy(approved = true)
+            true
+        } catch (e: Exception) {
+            plugin.logger.warning("[CityManager] approveCity($id) failed: ${e.message}")
+            false
+        }
+    }
 
     suspend fun deleteCity(id: Int): Boolean = withContext(Dispatchers.IO) {
         try {

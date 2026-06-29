@@ -1,5 +1,6 @@
 package io.github.darkstarworks.ancientCityPro
 
+import io.github.darkstarworks.ancientCityPro.commands.AcpCommand
 import io.github.darkstarworks.ancientCityPro.database.DatabaseManager
 import io.github.darkstarworks.ancientCityPro.listeners.CityDiscoveryListener
 import io.github.darkstarworks.ancientCityPro.listeners.ContainerLootListener
@@ -80,7 +81,11 @@ class AncientCityPro : JavaPlugin() {
                     server.pluginManager.registerEvents(CityDiscoveryListener(this@AncientCityPro), this@AncientCityPro)
                     server.pluginManager.registerEvents(ContainerLootListener(this@AncientCityPro), this@AncientCityPro)
                     server.pluginManager.registerEvents(ProtectionListener(this@AncientCityPro), this@AncientCityPro)
-                    // TODO: registerCommand here (main thread).
+                    getCommand("ancientcity")?.let {
+                        val executor = AcpCommand(this@AncientCityPro)
+                        it.setExecutor(executor)
+                        it.tabCompleter = executor
+                    }
                     isReady = true
                     logger.info("AncientCityPro ready.")
                     // Catch cities in chunks already resident at enable (the live

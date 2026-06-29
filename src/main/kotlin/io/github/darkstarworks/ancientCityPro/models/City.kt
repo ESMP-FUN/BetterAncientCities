@@ -22,6 +22,8 @@ data class City(
     val createdAt: Long,
     val lastReset: Long? = null,
     val snapshotFile: String? = null,
+    /** False = pending owner approval; loot + protection stay inactive until approved. */
+    val approved: Boolean = false,
 ) {
     fun getWorld(): World? = Bukkit.getWorld(world)
 

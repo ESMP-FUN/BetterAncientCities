@@ -51,26 +51,31 @@ class CityDiscoveryManager(private val plugin: AncientCityPro) {
         else
             IntBox.fromBukkit(bb)
 
+        val approved = !plugin.config.getBoolean("discovery.require-approval", true)
+
         plugin.launchAsync {
             if (plugin.cityManager.existsAt(world.name, origin)) return@launchAsync
-            val city = plugin.cityManager.registerCity(world.name, region, origin, pieces) ?: return@launchAsync
+            val city = plugin.cityManager.registerCity(world.name, region, origin, pieces, approved) ?: return@launchAsync
             notifyDiscovery(city)
         }
     }
 
     private fun notifyDiscovery(city: City) {
         val c = city.region
+        val state = if (city.approved) "active" else "PENDING approval"
         plugin.logger.info(
             "Discovered Ancient City #${city.id} in ${city.world} " +
-                "(${c.minX},${c.minY},${c.minZ})..(${c.maxX},${c.maxY},${c.maxZ}), ${city.pieces.size} pieces"
+                "(${c.minX},${c.minY},${c.minZ})..(${c.maxX},${c.maxY},${c.maxZ}), ${city.pieces.size} pieces [$state]"
         )
+        val tail = if (city.approved) "§7."
+            else " §7— §epending approval§7. Approve with §f/acp approve ${city.id}§7."
         plugin.scheduler.runTask(Runnable {
             plugin.server.onlinePlayers
                 .filter { it.hasPermission("acp.discovery.notify") }
                 .forEach {
                     it.sendMessage(
-                        "§5[AncientCityPro] §7Discovered an Ancient City at " +
-                            "§f${c.minX}, ${c.minY}, ${c.minZ} §7in §f${city.world}§7."
+                        "§5[AncientCityPro] §7Discovered an Ancient City #${city.id} at " +
+                            "§f${c.minX}, ${c.minY}, ${c.minZ} §7in §f${city.world}$tail"
                     )
                 }
         })

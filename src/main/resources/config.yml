@@ -20,6 +20,11 @@ discovery:
   # Run a sweep over already-loaded chunks on plugin enable so cities resident
   # at startup are caught without waiting for a ChunkLoadEvent.
   startup-sweep: true
+  # When true, a newly-discovered city is registered as PENDING — its loot and
+  # protection stay inactive until an operator approves it (/acp approve <id> or
+  # the GUI). Recommended while validating discovery; set false to make every
+  # discovered city active immediately.
+  require-approval: true
 
 loot:
   # Per-player container loot (Lootr-style). Each player gets their own private
