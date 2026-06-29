@@ -1,6 +1,8 @@
 package io.github.darkstarworks.ancientCityPro
 
 import io.github.darkstarworks.ancientCityPro.database.DatabaseManager
+import io.github.darkstarworks.ancientCityPro.listeners.CityDiscoveryListener
+import io.github.darkstarworks.ancientCityPro.managers.CityDiscoveryManager
 import io.github.darkstarworks.ancientCityPro.managers.CityManager
 import io.github.darkstarworks.ancientCityPro.scheduler.SchedulerAdapter
 import kotlinx.coroutines.CoroutineScope
@@ -39,6 +41,9 @@ class AncientCityPro : JavaPlugin() {
     lateinit var cityManager: CityManager
         private set
 
+    lateinit var discoveryManager: CityDiscoveryManager
+        private set
+
     // Plugin-wide coroutine scope (SupervisorJob so one failed job doesn't tear
     // down the rest). Cancelled in onDisable.
     private val pluginJob = SupervisorJob()
@@ -58,16 +63,20 @@ class AncientCityPro : JavaPlugin() {
         // main thread; listeners/commands register on the main thread once ready.
         databaseManager = DatabaseManager(this)
         cityManager = CityManager(this)
+        discoveryManager = CityDiscoveryManager(this)
 
         launchAsync {
             try {
                 databaseManager.initialize()
                 cityManager.preload()
-                // TODO(discovery): register CityDiscoveryListener + run startup sweep.
                 scheduler.runTask(Runnable {
-                    // TODO: registerCommand / registerListeners here (main thread).
+                    server.pluginManager.registerEvents(CityDiscoveryListener(this@AncientCityPro), this@AncientCityPro)
+                    // TODO: registerCommand here (main thread).
                     isReady = true
                     logger.info("AncientCityPro ready.")
+                    // Catch cities in chunks already resident at enable (the live
+                    // ChunkLoadEvent covers everything loaded afterward).
+                    discoveryManager.startupSweep()
                 })
             } catch (e: Exception) {
                 logger.severe("AncientCityPro failed to initialize: ${e.message}")
