@@ -30,6 +30,14 @@ data class City(
         loc.world?.name == world && region.contains(loc)
 
     /**
+     * Whether [loc] is within the city's envelope expanded by [pad] blocks. The
+     * pad covers edge decoration (sculk sensors, bricks, wool) that vanilla places
+     * a few blocks outside the structure's declared bounding box.
+     */
+    fun containsInPaddedRegion(loc: Location, pad: Int): Boolean =
+        loc.world?.name == world && region.expanded(pad).contains(loc)
+
+    /**
      * Whether [loc] is inside an actual generated structure piece — the test that
      * decides if a container at [loc] is city loot vs. a player-built block.
      */

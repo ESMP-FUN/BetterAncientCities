@@ -197,6 +197,10 @@ class CityManager(private val plugin: AncientCityPro) {
     fun getCachedCityAt(loc: Location): City? =
         cache.values.firstOrNull { it.containsInRegion(loc) }
 
+    /** The city whose region envelope, expanded by [pad], contains [loc], or null. */
+    fun getCachedCityInPaddedRegion(loc: Location, pad: Int): City? =
+        cache.values.firstOrNull { it.containsInPaddedRegion(loc, pad) }
+
     /** All cached cities (read-only snapshot). */
     fun all(): Collection<City> = cache.values.toList()
 

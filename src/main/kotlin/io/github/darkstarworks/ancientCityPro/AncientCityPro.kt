@@ -3,6 +3,7 @@ package io.github.darkstarworks.ancientCityPro
 import io.github.darkstarworks.ancientCityPro.database.DatabaseManager
 import io.github.darkstarworks.ancientCityPro.listeners.CityDiscoveryListener
 import io.github.darkstarworks.ancientCityPro.listeners.ContainerLootListener
+import io.github.darkstarworks.ancientCityPro.listeners.ProtectionListener
 import io.github.darkstarworks.ancientCityPro.managers.CityDiscoveryManager
 import io.github.darkstarworks.ancientCityPro.managers.CityManager
 import io.github.darkstarworks.ancientCityPro.managers.ContainerLootManager
@@ -78,6 +79,7 @@ class AncientCityPro : JavaPlugin() {
                 scheduler.runTask(Runnable {
                     server.pluginManager.registerEvents(CityDiscoveryListener(this@AncientCityPro), this@AncientCityPro)
                     server.pluginManager.registerEvents(ContainerLootListener(this@AncientCityPro), this@AncientCityPro)
+                    server.pluginManager.registerEvents(ProtectionListener(this@AncientCityPro), this@AncientCityPro)
                     // TODO: registerCommand here (main thread).
                     isReady = true
                     logger.info("AncientCityPro ready.")

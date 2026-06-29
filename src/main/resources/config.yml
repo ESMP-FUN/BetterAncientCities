@@ -35,5 +35,20 @@ loot:
   # refresh (per-player copies persist indefinitely).
   refresh-hours: 12
 
+protection:
+  # Palette-aware griefing protection: only Ancient City *structure* blocks
+  # (worked deepslate, sculk, soul fixtures, wool/carpet, chains/lanterns,
+  # containers) are protected — natural deepslate, ores, and caves stay mineable.
+  enabled: true
+  # Blocks to expand the protected region beyond the structure's bounding box, to
+  # cover edge decoration vanilla places a few blocks outside it. ~8 is plenty.
+  bounds-padding: 8
+  # Deny placing structure-palette blocks inside the protected region.
+  block-place: true
+  # Protect structure blocks from creeper/TNT/other explosions.
+  block-explosions: true
+  # Show an action-bar message when a break/place is denied.
+  notify-denied: true
+
 debug:
   verbose-logging: false

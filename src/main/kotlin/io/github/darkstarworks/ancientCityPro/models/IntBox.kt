@@ -17,6 +17,10 @@ data class IntBox(
 
     fun contains(loc: Location): Boolean = contains(loc.blockX, loc.blockY, loc.blockZ)
 
+    /** This box expanded by [pad] blocks on every face. */
+    fun expanded(pad: Int): IntBox =
+        IntBox(minX - pad, minY - pad, minZ - pad, maxX + pad, maxY + pad, maxZ + pad)
+
     companion object {
         /**
          * Converts a Bukkit [BoundingBox] (as returned by

@@ -21,3 +21,6 @@ permissions:
   acp.discovery.notify:
     description: Receive in-game notifications when an Ancient City is auto-discovered
     default: op
+  acp.bypass.protection:
+    description: Bypass Ancient City griefing protection (break/place freely)
+    default: op
