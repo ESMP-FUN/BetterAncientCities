@@ -82,10 +82,10 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             sender.sendMessage(mm.deserialize(
                 "<gray>#<white>${c.id} <gray>[$tag<gray>] <white>${c.world} " +
                     "<click:run_command:'/acp tp ${c.id}'><hover:show_text:'<gray>Teleport to city <white>#${c.id}'>" +
-                    "<green><bold>[${r.minX} ${r.minY} ${r.minZ}]</bold></green></hover></click> " +
+                    "<green>[${r.minX} ${r.minY} ${r.minZ}]</green></hover></click> " +
                     "<dark_gray>• ${c.pieces.size} pieces  " +
                     "<click:run_command:'/acp open ${c.id}'><hover:show_text:'<gray>Open city <white>#${c.id}<gray> in the GUI'>" +
-                    "<yellow><bold>[menu]</bold></yellow></hover></click>"
+                    "<yellow>[menu]</yellow></hover></click>"
             ))
         }
     }

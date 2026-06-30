@@ -2,7 +2,7 @@
 
 # AncientCityPro
 
-### Renewable Ancient Cities for multiplayer — auto-discovered, per-player loot, griefing-protected, fully restorable.
+Renewable Ancient Cities for multiplayer -> auto-discovered, per-player loot, griefing-protected, fully restorable.
 
 **Got an "if it did [THING], I'd use it" idea? Tell me!** [<img src="https://raw.githubusercontent.com/darkstarworks/TrialChamberPro/master/dc.png" width="30" alt="Join Discord Server">](https://discord.gg/qwYcTpHsNC)
 
@@ -16,7 +16,7 @@ A naturally-generated Ancient City is single-use on a multiplayer server. The fi
 
 <br>
 
-**Full documentation:** *(GitBook — link in the GitHub README)* · **Source:** https://github.com/darkstarworks/AncientCityPro
+**Full documentation:** https://darkstarworks.gitbook.io/plugins/mc/acp-documentation
 
 ---
 
