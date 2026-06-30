@@ -1,24 +1,29 @@
-<!-- Banner: replace with the AncientCityPro banner asset URL once uploaded -->
+<div align="center">
 
 # AncientCityPro
 
-Renewable Ancient Cities for multiplayer -> auto-discovered, per-player loot, griefing-protected, fully restorable.
-
-**Got an "if it did [THING], I'd use it" idea? Tell me!** [<img src="https://raw.githubusercontent.com/darkstarworks/TrialChamberPro/master/dc.png" width="30" alt="Join Discord Server">](https://discord.gg/qwYcTpHsNC)
+### Renewable Ancient Cities for Multiplayer <br>
+Auto-discovery, Per-player loot, Griefing-protected, Fully restorable.
 
 <br>
 
-A naturally-generated Ancient City is single-use on a multiplayer server. The first player loots every chest, the structure gets hollowed out or griefed, and there's no practical way to reset 220 blocks of irregular Deep-Dark ruins by hand.
+**Got an "if it did [THING], I'd use it" idea? Tell me!** [<img src="https://raw.githubusercontent.com/darkstarworks/TrialChamberPro/master/dc.png" width="20" alt="Join Discord Server">](https://discord.gg/qwYcTpHsNC) <br>
 
-**AncientCityPro fixes that** — every player gets their own private roll of each chest, the city's loot refreshes on its own per-city timer, the structure is protected from griefing, and you can snapshot and restore the whole thing (reverting griefing *and* runaway sculk spread). It finds and manages cities automatically, with no per-city setup.
+Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
 
-> **Standalone** — AncientCityPro does **not** require TrialChamberPro or any other plugin. Run them side by side if you like; they don't interfere.
+</div>
+
+<br>
+
+> **Standalone** <br>
+> AncientCityPro does **not** require TrialChamberPro or any (of my) other plugin(s). <br>
+> Run them side by side if you like; they don't interfere.
 
 <br>
 
 **Full documentation:** https://darkstarworks.gitbook.io/plugins/mc/acp-documentation
 
----
+<br>
 
 ## Why AncientCityPro?
 
@@ -31,34 +36,52 @@ A naturally-generated Ancient City is single-use on a multiplayer server. The fi
 | No way to reset a 220-block ruin | One-click reset (or auto-restore on the refresh cycle) |
 | Setup overhead per city | Auto-discovery — cities register themselves from the game's own structure data |
 
----
+<br>
 
 ## Plug-and-Play Setup
 
-Drop the jar in `plugins/`, start once, and walk into an Ancient City. It registers itself as its chunks load and announces it to operators. Approve it in the GUI and it's live — per-player loot, protection, and refresh all active.
+Drop the jar in `plugins/`, (re)start your server and when an Ancient City is detected, <br>
+AncientCityPro saves it to your server and announces its find to operators. <br>
+Confirm it right from the chat or later in the GUI to activate per-player loot, refresh and protection.
+
+<br>
 
 ```yaml
-# plugins/AncientCityPro/config.yml
+# plugins/AncientCityPro/config.yml  -  default configuration
 discovery:
   enabled: true            # find Ancient Cities automatically
   require-approval: true   # new cities wait for your OK before going live
 ```
 
-> **Why approval is on by default:** auto-discovery uses the server's real structure data, so false positives are rare — but the approval step lets you eyeball each city first. Once you trust it on your world, set `require-approval: false` and discoveries go live the moment you walk in.
+> **Why is approval on by default?** 
+> Auto-discovery uses the server's real structure data, so false positives are rare, but not impossible. <br>
 
----
+<br>
+
+I recommend you simply follow these steps: 
+1. As you see this message:
+<img width="520" height="40" alt="image" src="https://github.com/user-attachments/assets/d7334c3b-a621-451b-91b9-24c0387b8fbc" />
+
+2. You click the [coordinates] to teleport there 
+3. Quickly inspect the area to verify the dimensions are correct
+4. Click [approve]
+
+That's all of the required setup. Sorry if you hoped for more.
+
+<br>
 
 ## Features
 
 ### Core Systems
 
-- **Auto-Discovery** — cities register themselves on chunk load (plus a startup sweep), using the game's generated-structure data for exact bounds and precise chest provenance. No WorldEdit, no commands per city.
-- **Per-Player Chest Loot** — Lootr-style private copies of every container, so the second player in never finds gutted chests. Chests stay chests.
-- **Per-City Refresh Cycle** — the first player to loot a city starts its refresh window; when it elapses, that city's loot is fresh again. Each city runs its own timer, so they never all refresh at once (and a 50-city world doesn't reset everything simultaneously).
-- **Griefing Protection** — the structure and a small margin around it are protected from breaking, placing, and explosions, while the natural Deep-Dark terrain *between* the ruins stays fully mineable.
-- **Snapshots** — capture a city's structure and restore it on demand; reverts griefing and sculk spread to a pristine state. A baseline is captured automatically on approval.
-- **Admin GUI** — `/acp menu` does everything. No YAML editing required.
-
+- **Auto-Discovery** — cities register themselves on chunk load (plus a startup sweep), using the game's generated-structure data for exact bounds and precise chest provenance. (No WorldEdit, no commands per city.)
+- **Per-Player Chest Loot** — Lootr-style private copies of every container, so the second player in, never finds gutted chests.
+- **Per-City Refresh Cycle** — the first player to loot a city starts its refresh window; when it elapses, that city's loot is fresh again. 
+> Each city runs its own timer, so they never all refresh at once (and a 50-city world doesn't reset everything simultaneously).
+- **Griefing Protection** — the structures and a small margin around them are protected from breaking, placing, and explosions, while the natural Deep-Dark terrain *between* the ruins stays fully mineable.
+- **Snapshots** — capture a city's structure and restore it on demand; reverts griefing and sculk spread to a pristine state. A baseline is captured automatically after an auto-discovery gets approved.
+- **Admin GUI** — `/acp menu` has everything. No YAML editing required. I'm not even sure why I included commands!
+<br>
 <details>
 
 <summary><strong>Per-player stats, bans & the loot-diff view</strong></summary>
@@ -69,7 +92,7 @@ discovery:
 - **Quick actions** — left-click a head to view their loot, shift-left to reset it (fresh on next open), right-click to loot-ban/unban.
 
 </details>
-
+<br>
 <details>
 
 <summary><strong>How the renewable model works</strong></summary>
@@ -79,7 +102,7 @@ City containers are never modified. The first time anyone opens one, its loot ta
 Operators can sneak-open a container to **edit the shared template**, changing what every player rolls.
 
 </details>
-
+<br>
 <details>
 
 <summary><strong>Technical</strong> — Folia-ready, async, dual database</summary>
@@ -91,7 +114,7 @@ Operators can sneak-open a container to **edit the shared template**, changing w
 
 </details>
 
----
+<br>
 
 ## Requirements
 
@@ -103,7 +126,7 @@ Operators can sneak-open a container to **edit the shared template**, changing w
 
 No required dependencies.
 
----
+<br>
 
 ## Commands & Permissions
 
@@ -139,7 +162,7 @@ No required dependencies.
 
 </details>
 
----
+<br>
 
 ## Support
 
@@ -147,7 +170,7 @@ No required dependencies.
 - **GitHub Issues** — [report bugs](https://github.com/darkstarworks/AncientCityPro/issues).
 - **Source** — [github.com/darkstarworks/AncientCityPro](https://github.com/darkstarworks/AncientCityPro).
 
----
+<br>
 
 ## Target Audience
 
@@ -167,6 +190,8 @@ Made with Kotlin by [darkstarworks](https://github.com/darkstarworks)
 
 Questions, or just want to say Hi? [Join the Discord.](https://discord.gg/qwYcTpHsNC)
 
-Prefer to stay quiet? (Anonymous) donations are **VERY** welcome: https://ko-fi.com/darkstarworks
+Did you know I have other plugins? Check them out on Modrinth [ [here](https://modrinth.com/organization/esmp) ] and [ [here](https://modrinth.com/user/darkstarworks) ] <br>
+
+Donating is free! (for me): [Ko-Fi](https://ko-fi.com/darkstarworks)
 
 </div>
