@@ -56,16 +56,8 @@ class CityDetailView(
         if (!city.approved) {
             set(12, guiItem(Material.LIME_DYE, "<green>Approve city",
                 listOf("<gray>Activate loot + protection for this city.")) { ctx ->
-                plugin.launchAsync {
-                    val ok = plugin.cityManager.approveCity(city.id)
-                    if (ok && plugin.config.getBoolean("snapshot.auto-capture-on-approve", true)) {
-                        plugin.cityManager.byId(city.id)?.let { plugin.snapshotManager.capture(it) }
-                    }
-                    plugin.scheduler.runAtEntity(ctx.player, Runnable {
-                        ctx.player.sendMessage(if (ok) "§aApproved city #${city.id} (baseline snapshot captured)." else "§cApproval failed.")
-                        if (ok) plugin.cityManager.byId(city.id)?.let { menu.openCityDetail(ctx.player, it) }
-                    })
-                }
+                ctx.player.closeInventory() // so the busy action bar is visible
+                menu.beginApproval(ctx.player, city, reopenDetail = true)
             })
         }
 
