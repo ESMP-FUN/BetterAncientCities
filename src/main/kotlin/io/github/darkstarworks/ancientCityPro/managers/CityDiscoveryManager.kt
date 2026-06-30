@@ -3,6 +3,7 @@ package io.github.darkstarworks.ancientCityPro.managers
 import io.github.darkstarworks.ancientCityPro.AncientCityPro
 import io.github.darkstarworks.ancientCityPro.models.City
 import io.github.darkstarworks.ancientCityPro.models.IntBox
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.World
 import org.bukkit.generator.structure.GeneratedStructure
 import java.util.concurrent.ConcurrentHashMap
@@ -67,17 +68,23 @@ class CityDiscoveryManager(private val plugin: AncientCityPro) {
             "Discovered Ancient City #${city.id} in ${city.world} " +
                 "(${c.minX},${c.minY},${c.minZ})..(${c.maxX},${c.maxY},${c.maxZ}), ${city.pieces.size} pieces [$state]"
         )
-        val tail = if (city.approved) "§7."
-            else " §7— §epending approval§7. Approve with §f/acp approve ${city.id}§7."
+        // Same formatting as a /acp list entry: clickable green coords (teleport)
+        // + a yellow clickable action — [approve] while pending, [menu] once active.
+        val tag = if (city.approved) "<green>active" else "<yellow>pending"
+        val action = if (city.approved)
+            "<click:run_command:'/acp open ${city.id}'><hover:show_text:'<gray>Open city <white>#${city.id}<gray> in the GUI'><yellow>[menu]</yellow></hover></click>"
+        else
+            "<click:run_command:'/acp approve ${city.id}'><hover:show_text:'<gray>Approve city <white>#${city.id}'><yellow>[approve]</yellow></hover></click>"
+        val comp = MiniMessage.miniMessage().deserialize(
+            "<light_purple>[AncientCityPro] <gray>Discovered Ancient City <gray>#<white>${city.id} <gray>[$tag<gray>] <white>${city.world} " +
+                "<click:run_command:'/acp tp ${city.id}'><hover:show_text:'<gray>Teleport to city <white>#${city.id}'>" +
+                "<green>[${c.minX} ${c.minY} ${c.minZ}]</green></hover></click> " +
+                "<dark_gray>• ${city.pieces.size} pieces  $action"
+        )
         plugin.scheduler.runTask(Runnable {
             plugin.server.onlinePlayers
                 .filter { it.hasPermission("acp.discovery.notify") }
-                .forEach {
-                    it.sendMessage(
-                        "§5[AncientCityPro] §7Discovered an Ancient City #${city.id} at " +
-                            "§f${c.minX}, ${c.minY}, ${c.minZ} §7in §f${city.world}$tail"
-                    )
-                }
+                .forEach { it.sendMessage(comp) }
         })
     }
 
