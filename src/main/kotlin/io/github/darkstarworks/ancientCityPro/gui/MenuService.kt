@@ -2,7 +2,11 @@ package io.github.darkstarworks.ancientCityPro.gui
 
 import io.github.darkstarworks.ancientCityPro.AncientCityPro
 import io.github.darkstarworks.ancientCityPro.models.City
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.MiniMessage
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Central opener for AncientCityPro's admin GUI. Views are built fresh on each
@@ -21,6 +25,62 @@ class MenuService(private val plugin: AncientCityPro) {
     fun openCityDetail(player: Player, city: City) {
         CityDetailView(plugin, this, city).open(player)
     }
+
+    /**
+     * Approve a pending city with immediate feedback. Shared by the chat
+     * `[approve]` link / `/acp approve` and the GUI button.
+     *
+     * Guards against duplicate runs (the slow baseline-snapshot capture meant a
+     * spammed [approve] link fired many times), sends an instant chat line, and —
+     * for an in-game player — animates a busy indicator on the action bar while
+     * the snapshot is captured, finishing with a result line.
+     */
+    fun beginApproval(sender: CommandSender, city: City, reopenDetail: Boolean) {
+        if (city.approved) { sender.sendMessage("§7City #${city.id} is already active."); return }
+        if (!plugin.cityManager.tryBeginApproval(city.id)) {
+            sender.sendMessage("§7Already approving city #${city.id}… one moment.")
+            return
+        }
+        sender.sendMessage("§e⏳ Approving city #${city.id} — capturing baseline snapshot, this can take a few seconds…")
+        val player = sender as? Player
+        val busy = player?.let { startBusyActionBar(it, "Approving city #${city.id}") }
+
+        plugin.launchAsync {
+            try {
+                val ok = plugin.cityManager.approveCity(city.id)
+                var cells = -1
+                if (ok && plugin.config.getBoolean("snapshot.auto-capture-on-approve", true)) {
+                    plugin.cityManager.byId(city.id)?.let { cells = plugin.snapshotManager.capture(it) }
+                }
+                busy?.cancel()
+                if (player != null) plugin.scheduler.runAtEntity(player, Runnable {
+                    player.sendActionBar(Component.empty())
+                    if (ok && reopenDetail && player.isOnline) {
+                        plugin.cityManager.byId(city.id)?.let { openCityDetail(player, it) }
+                    }
+                })
+                sender.sendMessage(
+                    if (ok) "§a✓ Approved city #${city.id}${if (cells >= 0) " §7(baseline snapshot: $cells cells)" else ""}."
+                    else "§cApproval failed."
+                )
+            } finally {
+                plugin.cityManager.endApproval(city.id)
+            }
+        }
+    }
+
+    /** Cycling-dots busy indicator on the player's action bar; cancel the returned task to stop. */
+    private fun startBusyActionBar(player: Player, label: String) =
+        plugin.scheduler.runTaskTimer(object : Runnable {
+            private val frames = listOf("", " .", " ..", " ...")
+            private val i = AtomicInteger(0)
+            override fun run() {
+                if (player.isOnline) {
+                    val dots = frames[i.getAndIncrement() % frames.size]
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<yellow>$label<gray>$dots"))
+                }
+            }
+        }, 0L, 8L)
 
     /**
      * The per-city player grid (heads + stat tooltips + quick actions). Stats are

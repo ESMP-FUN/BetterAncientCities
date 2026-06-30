@@ -234,6 +234,16 @@ class CityManager(private val plugin: AncientCityPro) {
     fun approved(): List<City> = cache.values.filter { it.approved }
     fun pending(): List<City> = cache.values.filter { !it.approved }
 
+    /** Cities with an approval+snapshot currently running, so repeated clicks
+     *  (e.g. spamming the chat [approve] link before the slow capture finishes)
+     *  don't kick off duplicate approvals. */
+    private val approvingInFlight = ConcurrentHashMap.newKeySet<Int>()
+
+    /** Atomically claims the approval slot for [id]; false if one is already running. */
+    fun tryBeginApproval(id: Int): Boolean = approvingInFlight.add(id)
+
+    fun endApproval(id: Int) { approvingInFlight.remove(id) }
+
     /** Approves a pending city (activates loot + protection). Returns false if unknown. */
     suspend fun approveCity(id: Int): Boolean = withContext(Dispatchers.IO) {
         val city = cache[id] ?: return@withContext false
