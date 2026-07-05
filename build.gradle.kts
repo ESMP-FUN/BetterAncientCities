@@ -1,19 +1,20 @@
 import org.gradle.api.attributes.java.TargetJvmVersion
 
 plugins {
-    kotlin("jvm") version "2.3.20"
-    id("com.gradleup.shadow") version "8.3.6"
+    kotlin("jvm") version "2.3.21"
+    id("com.gradleup.shadow") version "9.0.0"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 group = "io.github.darkstarworks"
-version = "1.0.2"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
+    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -37,6 +38,9 @@ dependencies {
     implementation("com.mysql:mysql-connector-j:8.4.0") {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }
+
+    // PluginPulse — update checking + verified install staging.
+    implementation("com.github.darkstarworks.PluginPulse:pluginpulse-core:v0.5.0")
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
@@ -83,6 +87,7 @@ tasks {
         // Do NOT relocate org.sqlite or com.mysql (JDBC drivers load by class name
         // + ServiceLoader; relocation would break driverClassName / META-INF/services).
         relocate("com.zaxxer.hikari", "io.github.darkstarworks.acp.hikari")
+        relocate("io.github.darkstarworks.pluginpulse", "io.github.darkstarworks.acp.pluginpulse")
 
         // Strip signature files from the (signed) MySQL connector jar — shading a
         // signed jar without this throws "Invalid signature file digest" at load.
