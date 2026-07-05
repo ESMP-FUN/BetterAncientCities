@@ -39,7 +39,7 @@ dependencies {
     }
 
     // PluginPulse — update checking + verified install staging.
-    implementation("com.github.darkstarworks.PluginPulse:pluginpulse-core:v0.4.1")
+    implementation("com.github.darkstarworks.PluginPulse:pluginpulse-core:v0.5.0")
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
