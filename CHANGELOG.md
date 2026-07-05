@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.1.0] - 2026-07-05
+### Added
+- **Built-in update checking.** AncientCityPro now checks GitHub Releases for new versions and notifies admins. The new `/acp update` command adds `check`, `download` (fetch a new build, verify its checksum, back up the current jar, and stage it in the server's update folder to install on the next restart), `restore` (roll back), and `status`. Default `notify` (announce only) — set `update.mode` to `download` or `auto-stage` in config.yml to enable installs. Powered by [PluginPulse](https://github.com/darkstarworks/PluginPulse).
+
 ## [1.0.2] - 2026-06-30
 ### Fixed
 - **Approving a city gave no feedback until its baseline snapshot finished — so the `[approve]` link could be clicked several times, each firing another approval/snapshot.** Approving now responds instantly (chat link, `/acp approve`, or the GUI button): a confirmation line, an animated busy indicator on the action bar while the snapshot is captured, then a result line. Repeat clicks while an approval is already running are ignored ("already approving #N…"), so a slow capture can no longer pile up duplicate approvals.

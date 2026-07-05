@@ -123,6 +123,11 @@ class AncientCityPro : JavaPlugin() {
                         it.setExecutor(executor)
                         it.tabCompleter = executor
                     }
+                    // Update checking (PluginPulse). Config in pluginpulse.yml;
+                    // server owners can override mode/interval via an `update:`
+                    // block in config.yml.
+                    io.github.darkstarworks.pluginpulse.PluginPulse.bootstrap(this@AncientCityPro)
+
                     isReady = true
                     logger.info("AncientCityPro ready.")
                     // Catch cities in chunks already resident at enable (the live
@@ -138,6 +143,7 @@ class AncientCityPro : JavaPlugin() {
 
     override fun onDisable() {
         isReady = false
+        io.github.darkstarworks.pluginpulse.PluginPulse.shutdown(this)
         if (::presenceListener.isInitialized) presenceListener.flushAll()
         scheduler.cancelAllTasks()
         pluginScope.cancel()
