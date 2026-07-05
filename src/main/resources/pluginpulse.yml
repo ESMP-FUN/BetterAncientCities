@@ -1,0 +1,14 @@
+# PluginPulse updater configuration.
+# https://github.com/darkstarworks/PluginPulse
+github: darkstarworks/AncientCityPro
+
+permission: acp.admin
+command-root: /acp
+user-agent-contact: https://github.com/darkstarworks/AncientCityPro
+prefix: "<gold>[AncientCityPro]</gold>"
+
+# off | check-only | notify | download | auto-stage
+# Server owners can override this (and check-interval-hours) from an
+# `update:` section in AncientCityPro's own config.yml.
+mode: notify
+check-interval-hours: 6

@@ -41,6 +41,8 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
             "unban" -> handleUnban(sender, args.getOrNull(1), args.getOrNull(2))
             "bans" -> handleBans(sender, args.getOrNull(1))
             "resetloot" -> handleResetLoot(sender, args.getOrNull(1), args.getOrNull(2))
+            "update" -> io.github.darkstarworks.pluginpulse.PluginPulse.handleUpdateCommand(
+                plugin, sender, args.copyOfRange(1, args.size))
             else -> sender.sendMessage("§cUnknown subcommand. §7Try §f/acp help§7.")
         }
         return true
@@ -253,7 +255,7 @@ class AcpCommand(private val plugin: AncientCityPro) : CommandExecutor, TabCompl
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         return when (args.size) {
-            1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "check", "snapshot", "reset", "reload", "ban", "unban", "bans", "resetloot", "help")
+            1 -> listOf("menu", "list", "info", "approve", "delete", "tp", "check", "snapshot", "reset", "reload", "ban", "unban", "bans", "resetloot", "update", "help")
                 .filter { it.startsWith(args[0].lowercase()) }
             2 -> when (args[0].lowercase()) {
                 "info", "approve", "delete", "tp", "open", "snapshot", "reset", "ban", "unban", "bans", "resetloot" ->
