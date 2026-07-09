@@ -25,6 +25,14 @@ discovery:
   # the GUI). Recommended while validating discovery; set false to make every
   # discovered city active immediately.
   require-approval: true
+  # Worlds where ACP never registers cities (case-insensitive world names).
+  # Useful when a second overworld-type world has Ancient Cities you want to
+  # leave vanilla. Cities already registered in a world BEFORE it was excluded
+  # keep working — remove them with /acp delete <id>.
+  # Example:
+  #   excluded-worlds:
+  #     - second_overworld
+  excluded-worlds: []
 
 loot:
   # Per-player container loot (Lootr-style). Each player gets their own private
