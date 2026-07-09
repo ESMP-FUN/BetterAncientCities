@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.1.1] - 2026-07-10
+### Added
+- **World exclusion.** New `discovery.excluded-worlds` list in config.yml keeps ACP from registering Ancient Cities in named worlds — useful when a second overworld-type world has cities you want to leave vanilla. Cities registered before a world was excluded keep working; remove them with `/acp delete <id>`.
+
 ## [1.1.0] - 2026-07-05
 ### Added
 - **Built-in update checking.** AncientCityPro now checks GitHub Releases for new versions and notifies admins. The new `/acp update` command adds `check`, `download` (fetch a new build, verify its checksum, back up the current jar, and stage it in the server's update folder to install on the next restart), `restore` (roll back), and `status`. Default `notify` (announce only) — set `update.mode` to `download` or `auto-stage` in config.yml to enable installs. Powered by [PluginPulse](https://github.com/darkstarworks/PluginPulse).
