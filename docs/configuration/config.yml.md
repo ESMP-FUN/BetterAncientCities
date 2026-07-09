@@ -48,6 +48,11 @@ protection:
   # Action-bar message when a break/place is denied.
   notify-denied: true
 
+# Anonymous usage metrics (bStats). No player data is collected — just
+# aggregate config/feature usage that guides development priorities.
+metrics:
+  enabled: true
+
 snapshot:
   # Hard cap on cells a single snapshot may capture (memory safety).
   max-cells: 3000000
@@ -73,4 +78,5 @@ YAML is indentation-sensitive and does **not** allow TAB characters — use spac
 * **`discovery.excluded-worlds`** (v1.1.1) — list world names to keep ACP entirely out of those worlds. Cities registered *before* a world was excluded keep working; remove them with `/acp delete <id>`.
 * **`loot.refresh-hours: 0`** — disables refresh entirely; per-player copies persist forever (until a manual refresh/reset).
 * **`protection.piece-padding`** — raise it if edge decoration is being left unprotected; lower it toward `1` if natural terrain right next to a building feels over-protected.
+* **`metrics.enabled`** (v1.1.1) — anonymous bStats usage metrics (database type, discovery settings, city-count bucket). No player data. Disable here or globally in `plugins/bStats/config.yml`.
 * **`snapshot.auto-reset-on-refresh`** — powerful for a truly self-healing city, but only enable it once you're comfortable that a restore at refresh time won't surprise players mid-explore.
