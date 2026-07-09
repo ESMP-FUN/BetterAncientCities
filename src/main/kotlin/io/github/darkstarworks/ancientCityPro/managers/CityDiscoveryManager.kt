@@ -26,6 +26,11 @@ class CityDiscoveryManager(private val plugin: AncientCityPro) {
 
     private fun enabled() = plugin.config.getBoolean("discovery.enabled", true)
 
+    /** Worlds where ACP never registers cities (discovery.excluded-worlds). */
+    private fun excluded(world: World) =
+        plugin.config.getStringList("discovery.excluded-worlds")
+            .any { it.equals(world.name, ignoreCase = true) }
+
     /**
      * Considers one generated structure for registration. MUST be called on the
      * region thread owning the structure's chunk — it reads the structure's
@@ -34,6 +39,7 @@ class CityDiscoveryManager(private val plugin: AncientCityPro) {
      */
     fun handle(world: World, gs: GeneratedStructure) {
         if (!enabled()) return
+        if (excluded(world)) return
 
         val bb = gs.boundingBox
         val origin = Triple(

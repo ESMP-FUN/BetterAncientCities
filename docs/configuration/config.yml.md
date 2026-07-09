@@ -24,6 +24,9 @@ discovery:
   # New cities register as PENDING; loot + protection activate only after an
   # operator approves them. Set false to make discoveries active immediately.
   require-approval: true
+  # Worlds where ACP never registers cities (case-insensitive names) — e.g. a
+  # second overworld-type world whose Ancient Cities should stay vanilla.
+  excluded-worlds: []
 
 loot:
   # Per-player container loot. Each player gets their own private copy.
@@ -67,6 +70,7 @@ YAML is indentation-sensitive and does **not** allow TAB characters — use spac
 </div>
 
 * **`discovery.require-approval`** — keep it `true` while you validate detection on your world; flip to `false` once you trust it so new cities go live on contact.
+* **`discovery.excluded-worlds`** (v1.1.1) — list world names to keep ACP entirely out of those worlds. Cities registered *before* a world was excluded keep working; remove them with `/acp delete <id>`.
 * **`loot.refresh-hours: 0`** — disables refresh entirely; per-player copies persist forever (until a manual refresh/reset).
 * **`protection.piece-padding`** — raise it if edge decoration is being left unprotected; lower it toward `1` if natural terrain right next to a building feels over-protected.
 * **`snapshot.auto-reset-on-refresh`** — powerful for a truly self-healing city, but only enable it once you're comfortable that a restore at refresh time won't surprise players mid-explore.
