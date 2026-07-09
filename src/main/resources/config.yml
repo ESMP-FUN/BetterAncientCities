@@ -65,6 +65,12 @@ protection:
   # Show an action-bar message when a break/place is denied.
   notify-denied: true
 
+# Anonymous usage metrics (bStats). No player data is collected — just
+# aggregate config/feature usage that guides development priorities.
+# Server-wide opt-out also available in plugins/bStats/config.yml.
+metrics:
+  enabled: true
+
 snapshot:
   # Hard cap on how many block-cells a single city snapshot may capture, to
   # protect memory on pathological structures. ~3M is far above a real city.

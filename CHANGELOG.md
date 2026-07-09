@@ -6,7 +6,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [1.1.1] - 2026-07-10
 ### Added
+- **Anonymous usage metrics (bStats).** Aggregate config/feature usage only — no player data. Opt out via `metrics.enabled: false` in config.yml or globally in `plugins/bStats/config.yml`.
 - **World exclusion.** New `discovery.excluded-worlds` list in config.yml keeps ACP from registering Ancient Cities in named worlds — useful when a second overworld-type world has cities you want to leave vanilla. Cities registered before a world was excluded keep working; remove them with `/acp delete <id>`.
+
+### Changed
+- Updated the bundled PluginPulse updater to v0.8.0 (configurable source order, authenticated private-repo updates, Jenkins update source).
 
 ## [1.1.0] - 2026-07-05
 ### Added
