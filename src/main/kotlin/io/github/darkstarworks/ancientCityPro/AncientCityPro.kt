@@ -128,6 +128,12 @@ class AncientCityPro : JavaPlugin() {
                     // block in config.yml.
                     io.github.darkstarworks.pluginpulse.PluginPulse.bootstrap(this@AncientCityPro)
 
+                    // Anonymous usage metrics (bStats). Opt-out via metrics.enabled
+                    // in config.yml or the global plugins/bStats/config.yml.
+                    val metricsStatus =
+                        io.github.darkstarworks.ancientCityPro.integrations.MetricsService.init(this@AncientCityPro)
+                    logger.info("bStats Metrics: $metricsStatus")
+
                     isReady = true
                     logger.info("AncientCityPro ready.")
                     // Catch cities in chunks already resident at enable (the live

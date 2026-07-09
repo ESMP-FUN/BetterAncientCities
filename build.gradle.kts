@@ -40,7 +40,10 @@ dependencies {
     }
 
     // PluginPulse — update checking + verified install staging.
-    implementation("com.github.darkstarworks.PluginPulse:pluginpulse-core:v0.5.0")
+    implementation("com.github.darkstarworks.PluginPulse:pluginpulse-core:v0.8.0")
+
+    // Anonymous usage metrics (relocated below — bStats requires it)
+    implementation("org.bstats:bstats-bukkit:3.2.1")
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
@@ -88,6 +91,8 @@ tasks {
         // + ServiceLoader; relocation would break driverClassName / META-INF/services).
         relocate("com.zaxxer.hikari", "io.github.darkstarworks.acp.hikari")
         relocate("io.github.darkstarworks.pluginpulse", "io.github.darkstarworks.acp.pluginpulse")
+        // bStats mandates relocation so multiple plugins can shade different versions
+        relocate("org.bstats", "io.github.darkstarworks.acp.bstats")
 
         // Strip signature files from the (signed) MySQL connector jar — shading a
         // signed jar without this throws "Invalid signature file digest" at load.
