@@ -1,14 +1,14 @@
 # PluginPulse updater configuration.
 # https://github.com/darkstarworks/PluginPulse
-github: darkstarworks/AncientCityPro
+github: ESMP-FUN/BetterAncientCities
 
-permission: acp.admin
-command-root: /acp
-user-agent-contact: https://github.com/darkstarworks/AncientCityPro
-prefix: "<gold>[AncientCityPro]</gold>"
+permission: bac.admin
+command-root: /ancient
+user-agent-contact: https://github.com/ESMP-FUN/BetterAncientCities
+prefix: "<gold>[BAC]</gold>"
 
 # off | check-only | notify | download | auto-stage
 # Server owners can override this (and check-interval-hours) from an
-# `update:` section in AncientCityPro's own config.yml.
+# `update:` section in BetterAncientCities's own config.yml.
 mode: notify
 check-interval-hours: 6

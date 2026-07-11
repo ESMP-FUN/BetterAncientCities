@@ -1,26 +1,43 @@
-name: AncientCityPro
+name: BetterAncientCities
 version: '${version}'
-main: io.github.darkstarworks.ancientCityPro.AncientCityPro
+main: com.esmpfun.betterancientcities.BetterAncientCities
 api-version: '26.1'
 folia-supported: true
 authors: [darkstarworks]
 description: Turns naturally-generated Ancient Cities into renewable, multiplayer-friendly content — auto-discovery, per-player chest loot, griefing protection, and (later) automatic resets.
-website: https://github.com/darkstarworks/AncientCityPro
+website: https://github.com/ESMP-FUN/BetterAncientCities
 
 commands:
-  ancientcity:
-    description: AncientCityPro admin command
-    usage: /acp <subcommand>
-    aliases: [acp]
-    permission: acp.admin
+  ancient:
+    description: Better Ancient Cities admin command
+    usage: /ancient <subcommand>
+    aliases: [bac, acp, ancientcity, betterancientcities]
+    permission: bac.admin
 
 permissions:
-  acp.admin:
-    description: Access to all AncientCityPro admin commands
+  bac.admin:
+    description: Access to all BetterAncientCities admin commands
     default: op
-  acp.discovery.notify:
+  bac.discovery.notify:
     description: Receive in-game notifications when an Ancient City is auto-discovered
     default: op
-  acp.bypass.protection:
+  bac.bypass.protection:
     description: Bypass Ancient City griefing protection (break/place freely)
     default: op
+
+  # Legacy pre-2.0 aliases
+  acp.admin:
+    description: Legacy alias of bac.admin
+    default: false
+    children:
+      bac.admin: true
+  acp.discovery.notify:
+    description: Legacy alias of bac.discovery.notify
+    default: false
+    children:
+      bac.discovery.notify: true
+  acp.bypass.protection:
+    description: Legacy alias of bac.bypass.protection
+    default: false
+    children:
+      bac.bypass.protection: true
