@@ -4,8 +4,8 @@ plugins {
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
-group = "io.github.darkstarworks"
-version = "1.1.1"
+group = "com.esmpfun"
+version = "2.0.0"
 
 repositories {
     mavenCentral()
@@ -46,6 +46,7 @@ dependencies {
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 }
