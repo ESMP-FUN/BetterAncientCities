@@ -16,7 +16,7 @@ Operators have **every** permission by default, including `acp.bypass.protection
 /lp user <name> permission set acp.bypass.protection false
 ```
 
-Or just use `/acp check` while looking at a block — it reports protection independently of your bypass.
+Or just use `/ancient check` while looking at a block — it reports protection independently of your bypass.
 
 </div>
 

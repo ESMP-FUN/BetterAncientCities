@@ -1,6 +1,6 @@
 <div align="center">
 
-# AncientCityPro
+# BetterAncientCities
 
 ### Renewable Ancient Cities for Multiplayer <br>
 Auto-discovery, Per-player loot, Griefing-protected, Fully restorable.
@@ -16,7 +16,7 @@ Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
 <br>
 
 > **Standalone** <br>
-> AncientCityPro does **not** require TrialChamberPro or any (of my) other plugin(s). <br>
+> BetterAncientCities does **not** require TrialChamberPro or any (of my) other plugin(s). <br>
 > Run them side by side if you like; they don't interfere.
 
 <br>
@@ -25,7 +25,7 @@ Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
 
 <br>
 
-## Why AncientCityPro?
+## Why BetterAncientCities?
 
 | Problem | Solution |
 |---------|----------|
@@ -41,13 +41,13 @@ Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
 ## Plug-and-Play Setup
 
 Drop the jar in `plugins/`, (re)start your server and when an Ancient City is detected, <br>
-AncientCityPro saves it to your server and announces its find to operators. <br>
+BetterAncientCities saves it to your server and announces its find to operators. <br>
 Confirm it right from the chat or later in the GUI to activate per-player loot, refresh and protection.
 
 <br>
 
 ```yaml
-# plugins/AncientCityPro/config.yml  -  default configuration
+# plugins/BetterAncientCities/config.yml  -  default configuration
 discovery:
   enabled: true            # find Ancient Cities automatically
   require-approval: true   # new cities wait for your OK before going live
@@ -80,7 +80,7 @@ That's all of the required setup. Sorry if you hoped for more.
 > Each city runs its own timer, so they never all refresh at once (and a 50-city world doesn't reset everything simultaneously).
 - **Griefing Protection** — the structures and a small margin around them are protected from breaking, placing, and explosions, while the natural Deep-Dark terrain *between* the ruins stays fully mineable.
 - **Snapshots** — capture a city's structure and restore it on demand; reverts griefing and sculk spread to a pristine state. A baseline is captured automatically after an auto-discovery gets approved.
-- **Admin GUI** — `/acp menu` has everything. No YAML editing required. I'm not even sure why I included commands!
+- **Admin GUI** — `/ancient menu` has everything. No YAML editing required. I'm not even sure why I included commands!
 <br>
 <details>
 
@@ -132,19 +132,19 @@ No required dependencies.
 
 <details>
 
-<summary><strong>Commands</strong> — everything's also in <code>/acp menu</code></summary>
+<summary><strong>Commands</strong> — everything's also in <code>/ancient menu</code></summary>
 
 | Command | Description |
 |---------|-------------|
-| `/acp menu` | Open the admin GUI (the recommended way to do everything) |
-| `/acp list` | List cities — coordinates click-to-teleport, `[menu]` opens the GUI |
-| `/acp approve <id>` | Activate a pending city (captures a baseline snapshot) |
-| `/acp tp <id>` · `/acp open <id>` | Teleport to / open a city |
-| `/acp check` | Is the block you're looking at protected? (reports independently of your bypass) |
-| `/acp snapshot <id>` · `/acp reset <id>` | Capture / restore a city's structure |
-| `/acp ban\|unban\|bans <id> [player]` | Manage per-city loot bans |
-| `/acp resetloot <id> <player>` | Let a player loot the city fresh |
-| `/acp reload` | Reload config |
+| `/ancient menu` | Open the admin GUI (the recommended way to do everything) |
+| `/ancient list` | List cities — coordinates click-to-teleport, `[menu]` opens the GUI |
+| `/ancient approve <id>` | Activate a pending city (captures a baseline snapshot) |
+| `/ancient tp <id>` · `/ancient open <id>` | Teleport to / open a city |
+| `/ancient check` | Is the block you're looking at protected? (reports independently of your bypass) |
+| `/ancient snapshot <id>` · `/ancient reset <id>` | Capture / restore a city's structure |
+| `/ancient ban\|unban\|bans <id> [player]` | Manage per-city loot bans |
+| `/ancient resetloot <id> <player>` | Let a player loot the city fresh |
+| `/ancient reload` | Reload config |
 
 </details>
 
@@ -158,7 +158,7 @@ No required dependencies.
 | `acp.discovery.notify` | OP | Notified when a city is auto-discovered |
 | `acp.bypass.protection` | OP | Break/place freely inside a city |
 
-> **Heads up:** operators bypass protection by default. If you can still break blocks in an active city, that's why — test with a non-op account, or just use `/acp check` to confirm protection coverage as an op.
+> **Heads up:** operators bypass protection by default. If you can still break blocks in an active city, that's why — test with a non-op account, or just use `/ancient check` to confirm protection coverage as an op.
 
 </details>
 
@@ -167,8 +167,8 @@ No required dependencies.
 ## Support
 
 - **Discord** — [join here](https://discord.gg/qwYcTpHsNC) for support, announcements, and feature requests.
-- **GitHub Issues** — [report bugs](https://github.com/darkstarworks/AncientCityPro/issues).
-- **Source** — [github.com/darkstarworks/AncientCityPro](https://github.com/darkstarworks/AncientCityPro).
+- **GitHub Issues** — [report bugs](https://github.com/ESMP-FUN/BetterAncientCities/issues).
+- **Source** — [github.com/ESMP-FUN/BetterAncientCities](https://github.com/ESMP-FUN/BetterAncientCities).
 
 <br>
 

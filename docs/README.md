@@ -8,7 +8,7 @@ Turn Minecraft's Ancient Cities from one-and-done loot runs into renewable, mult
 
 A naturally-generated Ancient City is single-use on a multiplayer server. The first player loots every chest, the structure gets griefed or hollowed out, and there's nothing left for anyone else. Because cities sit in the Deep Dark and span ~220 blocks of irregular ruins, there's no practical way to "reset" one by hand.
 
-AncientCityPro fixes that: every player gets their own private roll of each chest, the city's loot refreshes on a per-city timer, the structure is protected from griefing, and you can snapshot and restore the whole thing — reverting both griefing and runaway sculk spread.
+BetterAncientCities fixes that: every player gets their own private roll of each chest, the city's loot refreshes on a per-city timer, the structure is protected from griefing, and you can snapshot and restore the whole thing — reverting both griefing and runaway sculk spread.
 
 ***
 
@@ -21,7 +21,7 @@ AncientCityPro fixes that: every player gets their own private roll of each ches
 * **Snapshots** — capture a city's structure and restore it on demand, reverting griefing and sculk spread to a pristine state.
 * **Per-player stats** — containers looted, time in city, deaths, and denied griefing attempts, all per player per city.
 * **Loot bans** — bar a specific player from looting a specific city (they can still walk through it).
-* **Admin GUI** — `/acp menu` handles everything: browse cities, teleport, approve, snapshot/reset, view per-player stats, inspect what each player looted (with a visual diff vs. the original), and ban/unban.
+* **Admin GUI** — `/ancient menu` handles everything: browse cities, teleport, approve, snapshot/reset, view per-player stats, inspect what each player looted (with a visual diff vs. the original), and ban/unban.
 
 ***
 
@@ -31,7 +31,7 @@ AncientCityPro fixes that: every player gets their own private roll of each ches
 * **Paper, Folia, or Purpur**
 * **Java 21+**
 
-AncientCityPro is standalone — it does **not** require TrialChamberPro or any other plugin.
+BetterAncientCities is standalone — it does **not** require TrialChamberPro or any other plugin.
 
 ***
 
