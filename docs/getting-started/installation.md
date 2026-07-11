@@ -1,21 +1,21 @@
 # Installation
 
 1. Download the correct jar for your server:
-   * **`AncientCityPro-1.0.0.jar`** — Minecraft 1.21.1 through 1.21.x
-   * **`AncientCityPro-1.0.0-mc26.jar`** — Minecraft 26.x
+   * **`BetterAncientCities-1.0.0.jar`** — Minecraft 1.21.1 through 1.21.x
+   * **`BetterAncientCities-1.0.0-mc26.jar`** — Minecraft 26.x
 2. Drop it into your server's `plugins/` folder.
 3. Restart the server.
-4. That's it. AncientCityPro creates its config and database on first start and begins discovering Ancient Cities as their chunks load.
+4. That's it. BetterAncientCities creates its config and database on first start and begins discovering Ancient Cities as their chunks load.
 
 <div data-gb-custom-block data-tag="hint" data-style="info">
 
-AncientCityPro is **standalone** — it doesn't depend on TrialChamberPro or any other plugin. Running both side by side is fine; they don't interfere.
+BetterAncientCities is **standalone** — it doesn't depend on TrialChamberPro or any other plugin. Running both side by side is fine; they don't interfere.
 
 </div>
 
 ## Database
 
-By default the plugin uses an embedded **SQLite** database (`plugins/AncientCityPro/database.db`) — zero setup. For large networks you can switch to **MySQL** in `config.yml`:
+By default the plugin uses an embedded **SQLite** database (`plugins/BetterAncientCities/database.db`) — zero setup. For large networks you can switch to **MySQL** in `config.yml`:
 
 ```yaml
 database:

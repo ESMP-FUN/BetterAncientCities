@@ -10,10 +10,10 @@ Locate an Ancient City the normal way:
 /locate structure ancient_city
 ```
 
-Travel there. As its chunks load, AncientCityPro discovers it automatically and announces it to online operators:
+Travel there. As its chunks load, BetterAncientCities discovers it automatically and announces it to online operators:
 
 ```
-[AncientCityPro] Discovered an Ancient City #1 at -781, -52, -426 in world — pending approval.
+[BetterAncientCities] Discovered an Ancient City #1 at -781, -52, -426 in world — pending approval.
 ```
 
 ## 2. Approve it
@@ -23,10 +23,10 @@ By default a discovered city is **pending** — its loot and protection stay ina
 Open the admin GUI and approve it:
 
 ```
-/acp menu
+/ancient menu
 ```
 
-Click the city → **Approve city**. (Or from the command line: `/acp approve 1`.)
+Click the city → **Approve city**. (Or from the command line: `/ancient approve 1`.)
 
 On approval, a **baseline snapshot** is captured automatically, so you always have a restore point.
 
@@ -46,7 +46,7 @@ The city is now live:
 
 ## Managing a city
 
-Everything is in `/acp menu` → click a city:
+Everything is in `/ancient menu` → click a city:
 
 * **Teleport** to it.
 * **Capture snapshot** / **Reset to snapshot** — save the structure, or restore it (reverts griefing and sculk spread).

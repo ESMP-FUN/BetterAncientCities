@@ -5,14 +5,14 @@
 You're almost certainly an **operator**, and operators have `acp.bypass.protection` by default. This is intended (admins need to build/fix). Confirm protection is actually working with:
 
 ```
-/acp check
+/ancient check
 ```
 
 while looking at a structure block — it reports protection independently of your bypass. To test as a normal player, use a non-op account or negate the permission (see [Permissions](reference/permissions.md)).
 
 ## A discovered city isn't active
 
-New cities are **pending** until approved (`discovery.require-approval: true`). Approve it in `/acp menu` or with `/acp approve <id>`. To make discoveries active immediately, set `discovery.require-approval: false`.
+New cities are **pending** until approved (`discovery.require-approval: true`). Approve it in `/ancient menu` or with `/ancient approve <id>`. To make discoveries active immediately, set `discovery.require-approval: false`.
 
 ## Nothing gets discovered
 
@@ -30,8 +30,8 @@ The refresh cycle is **per-city and starts on first-loot**. If no one has looted
 
 ## Config changes don't apply
 
-Run `/acp reload` after editing `config.yml`. If the file won't load at all, check for **TAB characters** — YAML requires spaces only.
+Run `/ancient reload` after editing `config.yml`. If the file won't load at all, check for **TAB characters** — YAML requires spaces only.
 
 ## Reporting bugs
 
-Include your server version (Paper/Folia + Minecraft version), the AncientCityPro version, and any `[AncientCityPro]` / `[Snapshot]` lines from the console.
+Include your server version (Paper/Folia + Minecraft version), the BetterAncientCities version, and any `[BetterAncientCities]` / `[Snapshot]` lines from the console.

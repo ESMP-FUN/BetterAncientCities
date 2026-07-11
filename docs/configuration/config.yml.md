@@ -1,6 +1,6 @@
 # config.yml
 
-The full configuration, with defaults. Edit `plugins/AncientCityPro/config.yml` and run `/acp reload` to apply changes.
+The full configuration, with defaults. Edit `plugins/BetterAncientCities/config.yml` and run `/ancient reload` to apply changes.
 
 ```yaml
 database:
@@ -75,7 +75,7 @@ YAML is indentation-sensitive and does **not** allow TAB characters — use spac
 </div>
 
 * **`discovery.require-approval`** — keep it `true` while you validate detection on your world; flip to `false` once you trust it so new cities go live on contact.
-* **`discovery.excluded-worlds`** (v1.1.1) — list world names to keep ACP entirely out of those worlds. Cities registered *before* a world was excluded keep working; remove them with `/acp delete <id>`.
+* **`discovery.excluded-worlds`** (v1.1.1) — list world names to keep ACP entirely out of those worlds. Cities registered *before* a world was excluded keep working; remove them with `/ancient delete <id>`.
 * **`loot.refresh-hours: 0`** — disables refresh entirely; per-player copies persist forever (until a manual refresh/reset).
 * **`protection.piece-padding`** — raise it if edge decoration is being left unprotected; lower it toward `1` if natural terrain right next to a building feels over-protected.
 * **`metrics.enabled`** (v1.1.1) — anonymous bStats usage metrics (database type, discovery settings, city-count bucket). No player data. Disable here or globally in `plugins/bStats/config.yml`.
