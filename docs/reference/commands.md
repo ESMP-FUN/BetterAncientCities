@@ -1,6 +1,6 @@
 # Commands
 
-All commands are under `/acp` (alias of `/ancientcity`) and require `acp.admin` (default: operators). `<id>` is a city id from `/ancient list`.
+All commands are under `/ancient` (aliases `/bac`, `/acp`, `/ancientcity`, `/betterancientcities`) and require `bac.admin` (default: operators). `<id>` is a city id from `/ancient list`.
 
 | Command | What it does |
 | --- | --- |

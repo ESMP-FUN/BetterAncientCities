@@ -154,9 +154,9 @@ No required dependencies.
 
 | Permission | Default | Grants |
 |------------|---------|--------|
-| `acp.admin` | OP | All `/acp` commands and the GUI |
-| `acp.discovery.notify` | OP | Notified when a city is auto-discovered |
-| `acp.bypass.protection` | OP | Break/place freely inside a city |
+| `bac.admin` | OP | All `/ancient` commands and the GUI |
+| `bac.discovery.notify` | OP | Notified when a city is auto-discovered |
+| `bac.bypass.protection` | OP | Break/place freely inside a city |
 
 > **Heads up:** operators bypass protection by default. If you can still break blocks in an active city, that's why — test with a non-op account, or just use `/ancient check` to confirm protection coverage as an op.
 

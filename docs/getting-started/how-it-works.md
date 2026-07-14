@@ -12,7 +12,7 @@ Because it uses the real structure data, the plugin knows precisely which chests
 
 City containers are never modified. The first time anyone opens one, the plugin rolls its loot table once and stores that as a shared **template**. Every player then gets their own private **copy** cloned from the template — so each player loots the full chest, independently.
 
-Operators holding `acp.admin` can **sneak-open** a container to edit the shared template; normal players always get their own copy.
+Operators holding `bac.admin` can **sneak-open** a container to edit the shared template; normal players always get their own copy.
 
 ## The refresh cycle
 
@@ -28,7 +28,7 @@ Because each city's timer starts when *it* is first looted, cities refresh stagg
 
 Protection is **bounds-based per structure piece**, not material-based. Ancient cities are built largely from plain deepslate and basalt, so a material allow-list would leave most of the structure exposed. Instead, any block inside a structure piece (expanded by a small `protection.piece-padding`) is protected, regardless of type — while the natural deep-dark terrain *between* the scattered ruins stays fully mineable.
 
-Operators bypass protection by default (`acp.bypass.protection`). Use `/ancient check` while looking at a block to see whether it's protected and why.
+Operators bypass protection by default (`bac.bypass.protection`). Use `/ancient check` while looking at a block to see whether it's protected and why.
 
 ## Snapshots
 
