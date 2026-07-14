@@ -15,7 +15,7 @@ BetterAncientCities does [B]not[/B] require TrialChamberPro or any (of my) other
 Run them side by side if you like; they don't interfere.
 [/QUOTE]
 
-[B]Full documentation:[/B] [URL]https://github.com/ESMP-FUN/BetterAncientCities/tree/master/docs[/URL]
+[B]Full documentation:[/B] [URL]https://esmp-fun.gitbook.io/plugins/better-ancient-cities[/URL]
 
 [SIZE=6][B]Why BetterAncientCities?[/B][/SIZE]
 
