@@ -21,7 +21,7 @@ Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
 
 <br>
 
-**Full documentation:** https://darkstarworks.gitbook.io/plugins/mc/acp-documentation
+**Full documentation:** https://github.com/ESMP-FUN/BetterAncientCities/tree/master/docs
 
 <br>
 
