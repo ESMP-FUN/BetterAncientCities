@@ -123,9 +123,9 @@ No required dependencies.
 
 [SPOILER='Permissions']
 [LIST]
-[*][ICODE]acp.admin[/ICODE] (default: OP) — All [ICODE]/acp[/ICODE] commands and the GUI
-[*][ICODE]acp.discovery.notify[/ICODE] (default: OP) — Notified when a city is auto-discovered
-[*][ICODE]acp.bypass.protection[/ICODE] (default: OP) — Break/place freely inside a city
+[*][ICODE]bac.admin[/ICODE] (default: OP) — All [ICODE]/ancient[/ICODE] commands and the GUI
+[*][ICODE]bac.discovery.notify[/ICODE] (default: OP) — Notified when a city is auto-discovered
+[*][ICODE]bac.bypass.protection[/ICODE] (default: OP) — Break/place freely inside a city
 [/LIST]
 
 [QUOTE]

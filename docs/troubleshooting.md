@@ -2,7 +2,7 @@
 
 ## "I can still break blocks in an approved city"
 
-You're almost certainly an **operator**, and operators have `acp.bypass.protection` by default. This is intended (admins need to build/fix). Confirm protection is actually working with:
+You're almost certainly an **operator**, and operators have `bac.bypass.protection` by default. This is intended (admins need to build/fix). Confirm protection is actually working with:
 
 ```
 /ancient check
