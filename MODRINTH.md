@@ -21,7 +21,7 @@ Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
 
 <br>
 
-**Full documentation:** https://github.com/ESMP-FUN/BetterAncientCities/tree/master/docs
+**Full documentation:** https://esmp-fun.gitbook.io/plugins/better-ancient-cities
 
 <br>
 
