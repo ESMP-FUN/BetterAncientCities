@@ -48,10 +48,12 @@ protection:
   # Action-bar message when a break/place is denied.
   notify-denied: true
 
-# Anonymous usage metrics (bStats). No player data is collected — just
+# Anonymous usage metrics (FastStats). No player data is collected — just
 # aggregate config/feature usage that guides development priorities.
 metrics:
   enabled: true
+  # Opt-in error reporting (stack traces). Off by default.
+  error-reporting: false
 
 snapshot:
   # Hard cap on cells a single snapshot may capture (memory safety).
@@ -78,5 +80,6 @@ YAML is indentation-sensitive and does **not** allow TAB characters — use spac
 * **`discovery.excluded-worlds`** (v1.1.1) — list world names to keep ACP entirely out of those worlds. Cities registered *before* a world was excluded keep working; remove them with `/ancient delete <id>`.
 * **`loot.refresh-hours: 0`** — disables refresh entirely; per-player copies persist forever (until a manual refresh/reset).
 * **`protection.piece-padding`** — raise it if edge decoration is being left unprotected; lower it toward `1` if natural terrain right next to a building feels over-protected.
-* **`metrics.enabled`** (v1.1.1) — anonymous bStats usage metrics (database type, discovery settings, city-count bucket). No player data. Disable here or globally in `plugins/bStats/config.yml`.
+* **`metrics.enabled`** (v1.1.1) — anonymous FastStats usage metrics (database type, discovery settings, city count). No player data. Disable here or globally in `plugins/faststats/config.properties`.
+* **`metrics.error-reporting`** — opt-in crash/error reporting, **off by default**. When enabled, uncaught errors from BetterAncientCities are sent as stack traces so bugs can be fixed without a report. Stack traces can include file paths and other plugins' internals, which is why this is separate from `metrics.enabled` — and it needs `metrics.enabled: true` to take effect.
 * **`snapshot.auto-reset-on-refresh`** — powerful for a truly self-healing city, but only enable it once you're comfortable that a restore at refresh time won't surprise players mid-explore.

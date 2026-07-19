@@ -65,11 +65,17 @@ protection:
   # Show an action-bar message when a break/place is denied.
   notify-denied: true
 
-# Anonymous usage metrics (bStats). No player data is collected — just
+# Anonymous usage metrics (FastStats). No player data is collected — just
 # aggregate config/feature usage that guides development priorities.
-# Server-wide opt-out also available in plugins/bStats/config.yml.
+# Server-wide opt-out also available in plugins/faststats/config.properties.
 metrics:
   enabled: true
+  # Opt-in error reporting. Sends stack traces from this plugin when
+  # something goes wrong, which helps fix bugs nobody reports — but unlike
+  # the aggregate metrics above, a stack trace can include file paths and
+  # other plugins' internals. Off unless you turn it on. Requires
+  # 'enabled: true' above.
+  error-reporting: false
 
 snapshot:
   # Hard cap on how many block-cells a single city snapshot may capture, to
