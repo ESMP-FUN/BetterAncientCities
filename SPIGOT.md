@@ -15,7 +15,7 @@ BetterAncientCities does [B]not[/B] require TrialChamberPro or any (of my) other
 Run them side by side if you like; they don't interfere.
 [/QUOTE]
 
-[B]Full documentation:[/B] [URL]https://darkstarworks.gitbook.io/plugins/mc/acp-documentation[/URL]
+[B]Full documentation:[/B] [URL]https://esmp-fun.gitbook.io/plugins/better-ancient-cities[/URL]
 
 [SIZE=6][B]Why BetterAncientCities?[/B][/SIZE]
 
@@ -123,9 +123,9 @@ No required dependencies.
 
 [SPOILER='Permissions']
 [LIST]
-[*][ICODE]acp.admin[/ICODE] (default: OP) — All [ICODE]/acp[/ICODE] commands and the GUI
-[*][ICODE]acp.discovery.notify[/ICODE] (default: OP) — Notified when a city is auto-discovered
-[*][ICODE]acp.bypass.protection[/ICODE] (default: OP) — Break/place freely inside a city
+[*][ICODE]bac.admin[/ICODE] (default: OP) — All [ICODE]/ancient[/ICODE] commands and the GUI
+[*][ICODE]bac.discovery.notify[/ICODE] (default: OP) — Notified when a city is auto-discovered
+[*][ICODE]bac.bypass.protection[/ICODE] (default: OP) — Break/place freely inside a city
 [/LIST]
 
 [QUOTE]
@@ -159,4 +159,6 @@ Questions, or just want to say Hi? [URL='https://discord.gg/qwYcTpHsNC']Join the
 Did you know I have other plugins? Check them out on Modrinth [ [URL='https://modrinth.com/organization/esmp']here[/URL] ] and [ [URL='https://modrinth.com/user/darkstarworks']here[/URL] ]
 
 Donating is free! (for me): [URL='https://ko-fi.com/darkstarworks']Ko-Fi[/URL]
+
+[URL='https://faststats.dev/project/better-ancient-cities'][IMG]https://img.shields.io/endpoint?url=https%3A%2F%2Ffaststats.dev%2Fapi%2Fshields%2Fbetter-ancient-cities%3Fmetric%3Dservers%26color%3Dblue%26icon%3D1&style=flat[/IMG][/URL]
 [/CENTER]

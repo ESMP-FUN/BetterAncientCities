@@ -21,7 +21,7 @@ Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
 
 <br>
 
-**Full documentation:** https://darkstarworks.gitbook.io/plugins/mc/acp-documentation
+**Full documentation:** https://esmp-fun.gitbook.io/plugins/better-ancient-cities
 
 <br>
 
@@ -154,9 +154,9 @@ No required dependencies.
 
 | Permission | Default | Grants |
 |------------|---------|--------|
-| `acp.admin` | OP | All `/acp` commands and the GUI |
-| `acp.discovery.notify` | OP | Notified when a city is auto-discovered |
-| `acp.bypass.protection` | OP | Break/place freely inside a city |
+| `bac.admin` | OP | All `/ancient` commands and the GUI |
+| `bac.discovery.notify` | OP | Notified when a city is auto-discovered |
+| `bac.bypass.protection` | OP | Break/place freely inside a city |
 
 > **Heads up:** operators bypass protection by default. If you can still break blocks in an active city, that's why — test with a non-op account, or just use `/ancient check` to confirm protection coverage as an op.
 
@@ -193,5 +193,7 @@ Questions, or just want to say Hi? [Join the Discord.](https://discord.gg/qwYcTp
 Did you know I have other plugins? Check them out on Modrinth [ [here](https://modrinth.com/organization/esmp) ] and [ [here](https://modrinth.com/user/darkstarworks) ] <br>
 
 Donating is free! (for me): [Ko-Fi](https://ko-fi.com/darkstarworks)
+
+[![Servers](https://img.shields.io/endpoint?url=https%3A%2F%2Ffaststats.dev%2Fapi%2Fshields%2Fbetter-ancient-cities%3Fmetric%3Dservers%26color%3Dblue%26icon%3D1&style=flat)](https://faststats.dev/project/better-ancient-cities)
 
 </div>

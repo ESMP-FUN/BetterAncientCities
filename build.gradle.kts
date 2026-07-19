@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.esmpfun"
-version = "2.0.0"
+version = "2.1.0"
 
 repositories {
     mavenCentral()
@@ -15,6 +15,9 @@ repositories {
         name = "papermc-repo"
     }
     maven("https://jitpack.io")
+    maven("https://repo.faststats.dev/releases") {
+        name = "faststatsReleases"
+    }
 }
 
 dependencies {
@@ -42,8 +45,9 @@ dependencies {
     // PluginPulse — update checking + verified install staging.
     implementation("com.github.darkstarworks.PluginPulse:pluginpulse-core:v0.8.0")
 
-    // Anonymous usage metrics (relocated below — bStats requires it)
-    implementation("org.bstats:bstats-bukkit:3.2.1")
+    // Anonymous usage metrics (relocated below to avoid clashing with other
+    // plugins shading a different SDK version)
+    implementation("dev.faststats.metrics:bukkit:0.28.0")
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
@@ -92,8 +96,20 @@ tasks {
         // + ServiceLoader; relocation would break driverClassName / META-INF/services).
         relocate("com.zaxxer.hikari", "io.github.darkstarworks.acp.hikari")
         relocate("io.github.darkstarworks.pluginpulse", "io.github.darkstarworks.acp.pluginpulse")
-        // bStats mandates relocation so multiple plugins can shade different versions
-        relocate("org.bstats", "io.github.darkstarworks.acp.bstats")
+        relocate("dev.faststats", "io.github.darkstarworks.acp.faststats")
+
+        // Paper's plugin remapper rejects a jar containing duplicate entries.
+        // Concatenate the JDBC ServiceLoader registrations (sqlite-jdbc and
+        // mysql-connector-j each ship META-INF/services/java.sql.Driver) —
+        // deduping instead of merging would drop one of the two drivers.
+        mergeServiceFiles()
+        // The faststats bukkit/config/core modules each ship an identical
+        // META-INF/faststats.properties (version=0.28.0); keep the first.
+        // Scoped to that path only — a task-wide strategy would override
+        // mergeServiceFiles() above and silently drop the MySQL driver.
+        filesMatching("META-INF/faststats.properties") {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
 
         // Strip signature files from the (signed) MySQL connector jar — shading a
         // signed jar without this throws "Invalid signature file digest" at load.
