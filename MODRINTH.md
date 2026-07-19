@@ -194,4 +194,6 @@ Did you know I have other plugins? Check them out on Modrinth [ [here](https://m
 
 Donating is free! (for me): [Ko-Fi](https://ko-fi.com/darkstarworks)
 
+[![Servers](https://img.shields.io/endpoint?url=https%3A%2F%2Ffaststats.dev%2Fapi%2Fshields%2Fbetter-ancient-cities%3Fmetric%3Dservers%26color%3Dblue%26icon%3D1&style=flat)](https://faststats.dev/project/better-ancient-cities)
+
 </div>

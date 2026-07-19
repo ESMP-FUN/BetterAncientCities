@@ -129,11 +129,11 @@ class BetterAncientCities : JavaPlugin() {
                     // block in config.yml.
                     io.github.darkstarworks.pluginpulse.PluginPulse.bootstrap(this@BetterAncientCities)
 
-                    // Anonymous usage metrics (bStats). Opt-out via metrics.enabled
-                    // in config.yml or the global plugins/bStats/config.yml.
+                    // Anonymous usage metrics (FastStats). Opt-out via metrics.enabled
+                    // in config.yml or the global plugins/faststats/config.properties.
                     val metricsStatus =
                         com.esmpfun.betterancientcities.integrations.MetricsService.init(this@BetterAncientCities)
-                    logger.info("bStats Metrics: $metricsStatus")
+                    logger.info("FastStats Metrics: $metricsStatus")
 
                     isReady = true
                     logger.info("BetterAncientCities ready.")
@@ -150,6 +150,7 @@ class BetterAncientCities : JavaPlugin() {
 
     override fun onDisable() {
         isReady = false
+        com.esmpfun.betterancientcities.integrations.MetricsService.shutdown()
         io.github.darkstarworks.pluginpulse.PluginPulse.shutdown(this)
         if (::presenceListener.isInitialized) presenceListener.flushAll()
         scheduler.cancelAllTasks()
