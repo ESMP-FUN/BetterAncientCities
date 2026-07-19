@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [2.1.0] - 2026-07-20
+### Changed
+- **Usage metrics moved from bStats to FastStats.** Same aggregate config/feature data, still no player data. The server-wide opt-out is now `plugins/faststats/config.properties`; `metrics.enabled: false` in config.yml is unchanged. City count is now reported as a plain number rather than a pre-bucketed range.
+
+### Added
+- **Opt-in error reporting.** New `metrics.error-reporting` in config.yml, **off by default**, sends stack traces from BetterAncientCities so bugs get fixed without needing a report. Kept separate from `metrics.enabled` because a stack trace can include file paths, unlike the aggregate usage metrics.
+
 ## [2.0.0] - 2026-07-11
 ### Changed
 - **The plugin is now Better Ancient Cities.** Same free plugin, new name — part of the ESMP rebrand. The project now lives at https://github.com/ESMP-FUN/BetterAncientCities.

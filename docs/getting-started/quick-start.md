@@ -11,7 +11,7 @@ Locate an Ancient City the normal way:
 ```
 
 Travel there. As its chunks load, BetterAncientCities discovers it automatically and announces it to online operators:
-
+<img width="890" height="67" alt="image" src="https://github.com/user-attachments/assets/cc1b5da0-e49f-4f95-8d5c-f7fddb1a858c" />
 ```
 [BetterAncientCities] Discovered an Ancient City #1 at -781, -52, -426 in world — pending approval.
 ```
