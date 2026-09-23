@@ -22,9 +22,9 @@ repositories {
 }
 
 dependencies {
-    // Paper API 26.1.2, the oldest 26.x release (api-version '26.1'). This is the
-    // -mc26 build for 26.0 to 26.2; 1.21.x and 26.3 have their own branches.
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    // Paper API 26.3 (api-version '26.3'), the -mc263 build. 1.21.x and 26.0 to 26.2
+    // have their own branches.
+    compileOnly("io.papermc.paper:paper-api:26.3.build.38-alpha")
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -56,12 +56,12 @@ dependencies {
 
 tasks {
     runServer {
-        minecraftVersion("26.1.2")
+        minecraftVersion("26.3")
     }
 }
 
 // JDK 25 compiles against the Paper 26.x API, but the output is Java 21 bytecode so
-// Shadow's bundled ASM can read it. api-version '26.1' keeps this jar off 1.21.x.
+// Shadow's bundled ASM can read it. api-version '26.3' keeps this jar off older servers.
 kotlin {
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(25))
@@ -87,7 +87,7 @@ configurations.matching {
 
 tasks {
     shadowJar {
-        archiveClassifier.set("mc26")
+        archiveClassifier.set("mc263")
         // Kotlin, coroutines, org.sqlite and com.mysql stay where they are: the JDBC
         // drivers are loaded by class name and ServiceLoader.
         relocate("com.zaxxer.hikari", "io.github.darkstarworks.acp.hikari")
