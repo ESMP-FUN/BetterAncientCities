@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
-## [Unreleased]
+## [2.2.0] - 2026-09-24
 ### Added
 - **A separate download for Minecraft 26.3.** Servers on 26.3 should use the jar ending in `-mc263`.
 - **Protection now also stops buckets, fire, pistons and mobs.** Before, only breaking, placing and explosions were stopped, so a city could still be flooded, burned, pulled apart with pistons or changed by mobs such as endermen.
@@ -96,5 +96,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **SQLite (default) or MySQL** storage with connection pooling; the MySQL driver is bundled.
 - **Paper / Folia / Purpur**, Java 21+. A separate `-mc26` jar targets Minecraft 26.x.
 
+[2.2.0]: https://github.com/ESMP-FUN/BetterAncientCities/compare/v2.1.0...v2.2.0
 [1.0.2]: https://github.com/ESMP-FUN/BetterAncientCities/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ESMP-FUN/BetterAncientCities/compare/v1.0.0...v1.0.1
