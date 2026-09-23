@@ -29,7 +29,7 @@ repositories {
 dependencies {
     // Paper API 26.1.2, the oldest 26.x release (api-version '26.1'). This is the
     // -mc26 build for 26.0 to 26.2; 1.21.x and 26.3 have their own branches.
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.74-stable")
 
     // Kotlin
     implementation(kotlin("stdlib"))
