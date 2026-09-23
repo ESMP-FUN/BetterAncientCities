@@ -6,53 +6,45 @@ import com.esmpfun.betterancientcities.models.IntBox
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.World
 import org.bukkit.generator.structure.GeneratedStructure
+import org.bukkit.generator.structure.Structure
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.floor
 
 /**
- * Turns a [GeneratedStructure] (an Ancient City the server already knows about)
- * into a registered [City]. Far simpler than fingerprint/flood-fill discovery:
- * the structure API hands us complete bounds + per-piece bounds from a single
- * chunk, so there's no palette scan, no multi-chunk AABB growth, no retry.
+ * Registers Ancient Cities the server already knows about. The structure API gives
+ * full bounds and per-piece bounds from any one chunk of the city.
  *
- * Dedup: every loaded chunk of a city reports the same structure, so we key by
- * the structure bounding-box min corner (the city's [City.origin]) in an
- * in-memory seen-set — cheap rejection before any DB hit — backed by the DB
- * UNIQUE constraint for cross-restart and concurrent safety.
+ * Every chunk of a city reports the same structure, so it is keyed by the
+ * structure's min corner: an in-memory set skips repeats cheaply, and the database's
+ * unique constraint covers restarts and races.
  */
 class CityDiscoveryManager(private val plugin: BetterAncientCities) {
 
-    /** "world:ox:oy:oz" of cities already handled this session. */
+    /** "world:x:y:z" of cities already handled this session. */
     private val seen = ConcurrentHashMap.newKeySet<String>()
 
-    private fun enabled() = plugin.config.getBoolean("discovery.enabled", true)
+    fun enabled() = plugin.config.getBoolean("discovery.enabled", true)
 
-    /** Worlds where ACP never registers cities (discovery.excluded-worlds). */
-    private fun excluded(world: World) =
-        plugin.config.getStringList("discovery.excluded-worlds")
-            .any { it.equals(world.name, ignoreCase = true) }
+    fun excluded(world: World) =
+        plugin.config.getStringList("discovery.excluded-worlds").any { it.equals(world.name, ignoreCase = true) }
 
-    /**
-     * Considers one generated structure for registration. MUST be called on the
-     * region thread owning the structure's chunk — it reads the structure's
-     * bounding box and pieces synchronously here, then hands plain data to the
-     * async DB path.
-     */
+    private fun key(world: String, origin: Triple<Int, Int, Int>) = "$world:${origin.first}:${origin.second}:${origin.third}"
+
+    /** Lets a deleted city be registered again when its chunks next load. */
+    fun forget(city: City) {
+        seen.remove(key(city.world, city.origin))
+    }
+
+    /** Must run on the thread that owns the structure's chunk. */
     fun handle(world: World, gs: GeneratedStructure) {
-        if (!enabled()) return
-        if (excluded(world)) return
+        if (!enabled() || excluded(world)) return
 
         val bb = gs.boundingBox
-        val origin = Triple(
-            Math.floor(bb.minX).toInt(),
-            Math.floor(bb.minY).toInt(),
-            Math.floor(bb.minZ).toInt(),
-        )
-        val key = "${world.name}:${origin.first}:${origin.second}:${origin.third}"
-        if (!seen.add(key)) return // already handled this session
+        val origin = Triple(floor(bb.minX).toInt(), floor(bb.minY).toInt(), floor(bb.minZ).toInt())
+        val key = key(world.name, origin)
+        if (!seen.add(key)) return
 
         val pieces = gs.pieces.map { IntBox.fromBukkit(it.boundingBox) }
-        // Tighten the envelope to the actual pieces when configured (and we have
-        // them); otherwise use the raw structure bounding box.
         val region = if (plugin.config.getBoolean("discovery.clamp-to-structure-y", true) && pieces.isNotEmpty())
             IntBox.union(pieces)
         else
@@ -62,23 +54,26 @@ class CityDiscoveryManager(private val plugin: BetterAncientCities) {
 
         plugin.launchAsync {
             if (plugin.cityManager.existsAt(world.name, origin)) return@launchAsync
-            val city = plugin.cityManager.registerCity(world.name, region, origin, pieces, approved) ?: return@launchAsync
+            val city = plugin.cityManager.registerCity(world.name, region, origin, pieces, approved)
+            if (city == null) {
+                // Let a later chunk load try again, in case the database was only briefly away.
+                if (!plugin.cityManager.existsAt(world.name, origin)) seen.remove(key)
+                return@launchAsync
+            }
             notifyDiscovery(city)
         }
     }
 
     private fun notifyDiscovery(city: City) {
         val c = city.region
-        val state = if (city.approved) "active" else "PENDING approval"
+        val state = if (city.approved) "active" else "waiting for approval"
         plugin.logger.info(
-            "Discovered Ancient City #${city.id} in ${city.world} " +
-                "(${c.minX},${c.minY},${c.minZ})..(${c.maxX},${c.maxY},${c.maxZ}), ${city.pieces.size} pieces [$state]"
+            "Found Ancient City #${city.id} in ${city.world} at ${c.minX}, ${c.minY}, ${c.minZ} " +
+                "(${city.pieces.size} pieces, $state)"
         )
-        // Same formatting as a /ancient list entry: clickable green coords (teleport)
-        // + a yellow clickable action — [approve] while pending, [menu] once active.
         val tag = if (city.approved) "<green>active" else "<yellow>pending"
         val action = if (city.approved)
-            "<click:run_command:'/ancient open ${city.id}'><hover:show_text:'<gray>Open city <white>#${city.id}<gray> in the GUI'><yellow>[menu]</yellow></hover></click>"
+            "<click:run_command:'/ancient open ${city.id}'><hover:show_text:'<gray>Open city <white>#${city.id}<gray> in the menu'><yellow>[menu]</yellow></hover></click>"
         else
             "<click:run_command:'/ancient approve ${city.id}'><hover:show_text:'<gray>Approve city <white>#${city.id}'><yellow>[approve]</yellow></hover></click>"
         val comp = MiniMessage.miniMessage().deserialize(
@@ -94,21 +89,23 @@ class CityDiscoveryManager(private val plugin: BetterAncientCities) {
         })
     }
 
-    /**
-     * One-time sweep over already-loaded chunks on enable, so cities resident at
-     * startup are caught without waiting for a ChunkLoadEvent. Folia-safe: hops
-     * to each chunk's region thread to read its structures.
-     */
+    /** Checks chunks that were already loaded when the plugin started. */
     fun startupSweep() {
         if (!enabled() || !plugin.config.getBoolean("discovery.startup-sweep", true)) return
         for (world in plugin.server.worlds) {
-            if (world.environment != World.Environment.NORMAL) continue
-            for (chunk in world.loadedChunks) {
-                val loc = chunk.getBlock(0, world.minHeight, 0).location
+            if (world.environment != World.Environment.NORMAL || excluded(world)) continue
+            val chunks = try {
+                world.loadedChunks
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not list the loaded chunks of ${world.name}, so its cities are found as players explore instead.")
+                continue
+            }
+            for (chunk in chunks) {
+                val cx = chunk.x; val cz = chunk.z
+                val loc = org.bukkit.Location(world, (cx shl 4).toDouble(), 0.0, (cz shl 4).toDouble())
                 plugin.scheduler.runAtLocation(loc, Runnable {
-                    for (gs in world.getStructures(chunk.x, chunk.z, org.bukkit.generator.structure.Structure.ANCIENT_CITY)) {
-                        handle(world, gs)
-                    }
+                    if (!world.isChunkLoaded(cx, cz)) return@Runnable
+                    for (gs in world.getStructures(cx, cz, Structure.ANCIENT_CITY)) handle(world, gs)
                 })
             }
         }

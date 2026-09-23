@@ -1,28 +1,27 @@
 # Commands
 
-All commands are under `/ancient` (aliases `/bac`, `/acp`, `/ancientcity`, `/betterancientcities`) and require `bac.admin` (default: operators). `<id>` is a city id from `/ancient list`.
+Every command starts with `/ancient` (you can also type `/bac`, `/acp`, `/ancientcity` or `/betterancientcities`) and needs `bac.admin`, which operators have by default. `<number>` is the city's number from `/ancient list`.
 
 | Command | What it does |
 | --- | --- |
-| `/ancient menu` | Open the admin GUI (the recommended way to do everything below). |
-| `/ancient list` | List discovered cities (active + pending). Coordinates are click-to-teleport; `[menu]` opens the city in the GUI. |
-| `/ancient info <id>` | Show a city's bounds, piece count, and status. |
-| `/ancient approve <id>` | Activate a pending city (enables loot + protection; captures a baseline snapshot). |
-| `/ancient delete <id>` | Unregister a city and all its data. |
-| `/ancient tp <id>` | Teleport to a city's centre. |
-| `/ancient open <id>` | Open a specific city directly in the GUI. |
-| `/ancient check` | Look at a block and report whether it's in a city, inside a structure piece, and whether it's protected — **independent of your own bypass**. |
-| `/ancient snapshot <id>` | Capture the city's structure as a restore point. |
-| `/ancient reset <id>` | Restore the city from its snapshot (reverts griefing + sculk spread). |
-| `/ancient ban <id> <player> [reason]` | Loot-ban a player from a city (they can still walk through it). |
-| `/ancient unban <id> <player>` | Lift a loot ban. |
-| `/ancient bans <id>` | List a city's loot bans. |
-| `/ancient resetloot <id> <player>` | Clear a player's loot copies so they can loot the city fresh. |
+| `/ancient menu` | Open the menu. Everything below is in there too. |
+| `/ancient list` | List every city found, active and pending. Click the coordinates to teleport, or **[menu]** to open the city in the menu. |
+| `/ancient info <number>` | Show where a city is, how many buildings it has, and whether it is active. |
+| `/ancient approve <number>` | Switch on loot and protection for a pending city, and save its snapshot. |
+| `/ancient delete <number> confirm` | Forget a city with its saved chests, stats, loot bans and snapshot. Without `confirm` it only tells you what will happen. |
+| `/ancient tp <number>` | Teleport to a safe spot in the middle of a city. |
+| `/ancient open <number>` | Open one city straight away in the menu. |
+| `/ancient check` | Look at a block and see whether it is in a city, part of a building, and protected. Your own bypass is ignored, so this works for operators. |
+| `/ancient snapshot <number>` | Save the city's blocks so they can be put back later. |
+| `/ancient reset <number>` | Put the city's blocks back as saved, undoing griefing and sculk spread. |
+| `/ancient ban <number> <player> [reason]` | Stop a player looting a city. They can still walk through it. |
+| `/ancient unban <number> <player>` | Let a player loot a city again. |
+| `/ancient bans <number>` | List who may not loot a city. |
+| `/ancient resetloot <number> <player>` | Clear a player's chests in a city, so they can loot it fresh. |
 | `/ancient reload` | Reload `config.yml`. |
+| `/ancient update` | Check for a new version. `/ancient update status` shows the last result, `/ancient update download` fetches it to install on the next restart, and `/ancient update restore` puts the previous version back. |
 | `/ancient help` | Show the command list in-game. |
 
-<div data-gb-custom-block data-tag="hint" data-style="info">
-
-`/ancient check` is the quickest way to confirm protection coverage as an operator — operators bypass protection, so simply trying to break a block won't tell you whether it's protected. `check` reports the rule regardless of your bypass.
-
-</div>
+{% hint style="info" %}
+Operators can build anywhere, so breaking a block doesn't tell you whether it is protected. `/ancient check` does.
+{% endhint %}

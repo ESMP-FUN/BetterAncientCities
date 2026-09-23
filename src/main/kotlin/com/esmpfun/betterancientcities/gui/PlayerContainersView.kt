@@ -6,15 +6,12 @@ import com.esmpfun.betterancientcities.gui.framework.VcGui
 import com.esmpfun.betterancientcities.managers.ContainerLootManager
 import com.esmpfun.betterancientcities.models.City
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import java.util.UUID
 
-/**
- * The containers a specific player has a private copy of in a city — i.e. what
- * they've looted and what they left behind. Click a container to view that
- * player's exact copy. Copies are prefetched by [MenuService.openPlayerContainers].
- */
+/** The chests one player has opened in a city. Click one to see what they took. */
 class PlayerContainersView(
     private val plugin: BetterAncientCities,
     private val menu: MenuService,
@@ -23,7 +20,7 @@ class PlayerContainersView(
     private val copies: List<ContainerLootManager.PlayerCopy>,
     private val templates: Map<ContainerLootManager.ContainerPos, Array<org.bukkit.inventory.ItemStack?>>,
     private val page: Int = 0,
-) : VcGui(6, Component.text("§5City #${city.id} — Player Loot"), Holder(), "bac.admin") {
+) : VcGui(6, Component.text("City #${city.id} player loot", NamedTextColor.DARK_PURPLE), Holder(), "bac.admin") {
 
     class Holder : BaseHolder()
 
@@ -40,20 +37,20 @@ class PlayerContainersView(
         val slice = copies.drop(p * PER_PAGE).take(PER_PAGE)
 
         if (copies.isEmpty()) {
-            set(22, guiItem(Material.BARRIER, "<gray>$targetName has not looted any containers here",
-                listOf("<gray>A copy is created the first time they", "<gray>open a container in this city.")))
+            set(22, guiItem(Material.BARRIER, "<gray>$targetName has not opened any chests here",
+                listOf("<gray>Chests show up here once", "<gray>they open them.")))
         }
 
         slice.forEachIndexed { i, c ->
             val count = c.contents.count { it != null && !it.type.isAir }
             set(i, guiItem(
                 Material.CHEST,
-                "<aqua>Container <white>${c.pos.x}, ${c.pos.y}, ${c.pos.z}",
-                listOf("<gray>Items remaining: <white>$count", "", "<yellow>Click to view their copy")
+                "<aqua>Chest at <white>${c.pos.x}, ${c.pos.y}, ${c.pos.z}",
+                listOf("<gray>Filled slots left: <white>$count", "", "<yellow>Click to see what they took")
             ) { ctx ->
                 ContainerContentsView(
                     plugin,
-                    Component.text("§5$targetName @ ${c.pos.x},${c.pos.y},${c.pos.z}"),
+                    Component.text("$targetName at ${c.pos.x}, ${c.pos.y}, ${c.pos.z}", NamedTextColor.DARK_PURPLE),
                     c.contents,
                     template = templates[c.pos],
                     back = { pl -> menu.openPlayerContainers(pl, city, target) },
@@ -61,15 +58,15 @@ class PlayerContainersView(
             })
         }
 
-        if (p > 0) set(48, guiItem(Material.ARROW, "<white>◀ Previous") { ctx ->
+        if (p > 0) set(48, guiItem(Material.ARROW, "<white>« Previous page") { ctx ->
             PlayerContainersView(plugin, menu, city, target, copies, templates, p - 1).open(ctx.player)
         })
         set(49, guiItem(Material.PLAYER_HEAD, "<gray>$targetName",
-            listOf("<gray>${copies.size} looted containers", "<gray>Page <white>${p + 1}<gray>/<white>$pages")))
-        if (p < pages - 1) set(50, guiItem(Material.ARROW, "<white>Next ▶") { ctx ->
+            listOf("<gray>${copies.size} chests opened", "<gray>Page <white>${p + 1}<gray>/<white>$pages")))
+        if (p < pages - 1) set(50, guiItem(Material.ARROW, "<white>Next page »") { ctx ->
             PlayerContainersView(plugin, menu, city, target, copies, templates, p + 1).open(ctx.player)
         })
-        set(45, guiItem(Material.ARROW, "<white>◀ Back") { ctx -> menu.openPlayerList(ctx.player, city) })
+        set(45, guiItem(Material.ARROW, "<white>« Back") { ctx -> menu.openPlayerList(ctx.player, city) })
         set(53, guiItem(Material.BARRIER, "<red>Close") { ctx -> ctx.player.closeInventory() })
     }
 }
