@@ -40,6 +40,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - **Plainer wording** in chat, the menu, `config.yml` and the documentation.
+- **A smaller download,** about 1 MB less. Parts of the MySQL driver the plugin never uses are left out.
 
 ### Note
 - **Snapshots saved by this version cannot be read by older versions.** If you ever go back to an older version, save your snapshots again after downgrading.
