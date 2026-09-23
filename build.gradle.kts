@@ -1,8 +1,8 @@
 plugins {
-    kotlin("jvm") version "2.3.21"
-    id("com.gradleup.shadow") version "9.0.0"
+    kotlin("jvm") version "2.4.20"
+    id("com.gradleup.shadow") version "9.6.1"
     // 3.x uses Paper's current downloads API; 2.3.1 used the retired v2 API.
-    id("xyz.jpenilla.run-paper") version "3.0.2"
+    id("xyz.jpenilla.run-paper") version "3.1.0"
 }
 
 group = "com.esmpfun"
@@ -13,9 +13,14 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
-    maven("https://jitpack.io")
+    // Each extra repository may only serve its own packages, so nothing else can be swapped in.
+    maven("https://jitpack.io") {
+        name = "jitpack"
+        content { includeGroup("com.github.ESMP-FUN.PluginPulse") }
+    }
     maven("https://repo.faststats.dev/releases") {
         name = "faststatsReleases"
+        content { includeGroupByRegex("dev\\.faststats.*") }
     }
 }
 
@@ -25,17 +30,17 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 
     // Kotlin
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation(kotlin("stdlib"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
     // Database: SQLite by default, MySQL optional, both through HikariCP.
-    implementation("org.xerial:sqlite-jdbc:3.44.1.0")
+    implementation("org.xerial:sqlite-jdbc:3.53.4.0")
     // Paper ships slf4j, so HikariCP's copy is left out.
-    implementation("com.zaxxer:HikariCP:5.1.0") {
+    implementation("com.zaxxer:HikariCP:7.1.0") {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
     // protobuf-java is only for the X DevAPI (jdbc:mysqlx), which is never used. Saves ~1.7 MB.
-    implementation("com.mysql:mysql-connector-j:8.4.0") {
+    implementation("com.mysql:mysql-connector-j:9.7.0") {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }
 
@@ -43,12 +48,12 @@ dependencies {
     implementation("com.github.ESMP-FUN.PluginPulse:pluginpulse-core:v0.9.0")
 
     // Anonymous usage statistics, relocated below so other plugins' copies cannot clash.
-    implementation("dev.faststats.metrics:bukkit:0.28.0")
+    implementation("dev.faststats.metrics:bukkit:0.30.1")
 
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("io.mockk:mockk:1.14.11")
     testImplementation("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 }
 
@@ -73,7 +78,10 @@ tasks {
         relocate("dev.faststats", "io.github.darkstarworks.acp.faststats")
 
         // Paper refuses a jar with duplicate entries. Both drivers register in
-        // META-INF/services/java.sql.Driver, so the files are merged, not deduplicated.
+        // META-INF/services/java.sql.Driver, so the files are merged. Shadow only merges
+        // duplicates it is allowed to see, hence INCLUDE here; the merge still writes one
+        // entry. Without it the MySQL driver silently drops out of the jar.
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
         mergeServiceFiles()
         // Each FastStats module ships the same faststats.properties; keep one. Scoped to
         // this path, because a task-wide strategy would override mergeServiceFiles().
@@ -95,12 +103,13 @@ tasks {
         exclude("org/slf4j/**")
 
         // Keep only the SQLite natives servers run on: Linux x86_64, Linux aarch64 and
-        // Windows x86_64. A host on anything else fails to start with "No native library".
-        listOf(
-            "Linux/arm", "Linux/armv6", "Linux/armv7", "Linux/ppc64", "Linux/x86",
-            "Windows/aarch64", "Windows/armv7", "Windows/x86",
-            "Mac", "FreeBSD", "Linux-Android", "Linux-Musl",
-        ).forEach { exclude("org/sqlite/native/$it/**") }
+        // Windows x86_64. An allow-list, so platforms added by a newer driver stay out.
+        // A host on anything else fails to start with "No native library".
+        val keptNatives = listOf("Linux/x86_64/", "Linux/aarch64/", "Windows/x86_64/")
+        exclude { e ->
+            e.path.startsWith("org/sqlite/native/") && !e.isDirectory &&
+                keptNatives.none { e.path.startsWith("org/sqlite/native/$it") }
+        }
     }
 
     jar {
