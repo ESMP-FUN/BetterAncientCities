@@ -2,12 +2,9 @@ package com.esmpfun.betterancientcities.models
 
 import org.bukkit.Location
 import org.bukkit.util.BoundingBox
+import kotlin.math.floor
 
-/**
- * An inclusive, integer block-coordinate axis-aligned box. World-agnostic
- * (the owning [City] carries the world). Used both for a city's region envelope
- * and for each structure piece's bounds.
- */
+/** An inclusive block-coordinate box. The owning [City] carries the world. */
 data class IntBox(
     val minX: Int, val minY: Int, val minZ: Int,
     val maxX: Int, val maxY: Int, val maxZ: Int,
@@ -17,23 +14,17 @@ data class IntBox(
 
     fun contains(loc: Location): Boolean = contains(loc.blockX, loc.blockY, loc.blockZ)
 
-    /** This box expanded by [pad] blocks on every face. */
     fun expanded(pad: Int): IntBox =
         IntBox(minX - pad, minY - pad, minZ - pad, maxX + pad, maxY + pad, maxZ + pad)
 
     companion object {
         /**
-         * Converts a Bukkit [BoundingBox] (as returned by
-         * `GeneratedStructure`/`StructurePiece`) to inclusive block coords.
-         *
-         * Bukkit's `BoundingBox` upper corner is exclusive (a single block at
-         * (0,0,0) is min(0,0,0)..max(1,1,1)), so we subtract 1 for an inclusive
-         * block max. ⚠️ RUNTIME-VERIFY this holds for structure bounding boxes
-         * specifically (off-by-one here = provenance edges wrong by a block).
+         * Structure and structure-piece boxes come from the server with an inclusive
+         * max corner (CraftStructurePiece copies the block box as-is), so no -1 here.
          */
         fun fromBukkit(b: BoundingBox): IntBox = IntBox(
-            b.minX.toInt(), b.minY.toInt(), b.minZ.toInt(),
-            (b.maxX - 1).toInt(), (b.maxY - 1).toInt(), (b.maxZ - 1).toInt(),
+            floor(b.minX).toInt(), floor(b.minY).toInt(), floor(b.minZ).toInt(),
+            floor(b.maxX).toInt(), floor(b.maxY).toInt(), floor(b.maxZ).toInt(),
         )
 
         /** The smallest box enclosing all of [boxes]. Throws on an empty list. */

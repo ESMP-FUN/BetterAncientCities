@@ -9,13 +9,7 @@ import org.bukkit.configuration.file.FileConfiguration
 import java.io.File
 import java.sql.Connection
 
-/**
- * HikariCP-pooled database access. SQLite (default) or MySQL.
- *
- * Lean port of TrialChamberPro's DatabaseManager: same pool tuning (WAL +
- * concurrent readers for SQLite), same dual-dialect approach. Schema is
- * BetterAncientCities's own — `cities` + `city_pieces`.
- */
+/** HikariCP-pooled database access, SQLite (default) or MySQL. */
 class DatabaseManager(private val plugin: BetterAncientCities) {
 
     private lateinit var dataSource: HikariDataSource
@@ -28,12 +22,14 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
     /** A pooled connection. Always use inside `.use { }`. */
     val connection: Connection get() = dataSource.connection
 
+    val isOpen: Boolean get() = ::dataSource.isInitialized && !dataSource.isClosed
+
     suspend fun initialize() = withContext(Dispatchers.IO) {
         val config = plugin.config
         _databaseType = try {
-            DatabaseType.valueOf(config.getString("database.type", "SQLITE")!!.uppercase())
+            DatabaseType.valueOf(config.getString("database.type", "SQLITE")!!.trim().uppercase())
         } catch (_: IllegalArgumentException) {
-            plugin.logger.warning("Invalid database.type, defaulting to SQLITE")
+            plugin.logger.warning("database.type in config.yml must be sqlite or mysql. Using sqlite.")
             DatabaseType.SQLITE
         }
 
@@ -41,8 +37,9 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
             DatabaseType.SQLITE -> createSQLiteDataSource()
             DatabaseType.MYSQL -> createMySQLDataSource(config)
         }
-        plugin.logger.info("Database pool initialized (${_databaseType.name})")
+        plugin.logger.info("Database ready (${_databaseType.name.lowercase()})")
         createTables()
+        migrate()
     }
 
     private fun createSQLiteDataSource(): HikariDataSource {
@@ -58,7 +55,6 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
             maxLifetime = 600000
             connectionTestQuery = "SELECT 1"
             poolName = "BetterAncientCities-SQLite"
-            leakDetectionThreshold = 10000
             addDataSourceProperty("journal_mode", "WAL")
             addDataSourceProperty("synchronous", "NORMAL")
             addDataSourceProperty("busy_timeout", "5000")
@@ -76,7 +72,7 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
             driverClassName = "com.mysql.cj.jdbc.Driver"
             this.username = username
             this.password = password
-            maximumPoolSize = config.getInt("database.mysql.pool-size", 10)
+            maximumPoolSize = config.getInt("database.mysql.pool-size", 10).coerceIn(2, 50)
             connectionTestQuery = "SELECT 1"
             poolName = "BetterAncientCities-MySQL"
             addDataSourceProperty("cachePrepStmts", "true")
@@ -86,14 +82,15 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
         })
     }
 
-    private suspend fun createTables() = withContext(Dispatchers.IO) {
-        val autoId = if (_databaseType == DatabaseType.SQLITE)
-            "INTEGER PRIMARY KEY AUTOINCREMENT" else "INT AUTO_INCREMENT PRIMARY KEY"
+    private fun createTables() {
+        val mysql = _databaseType == DatabaseType.MYSQL
+        val autoId = if (mysql) "INT AUTO_INCREMENT PRIMARY KEY" else "INTEGER PRIMARY KEY AUTOINCREMENT"
+        // MySQL TEXT stops at 64 KB, which a chest of full shulker boxes can pass.
+        val bigText = if (mysql) "MEDIUMTEXT" else "TEXT"
         connection.use { conn ->
             conn.createStatement().use { stmt ->
-                // Registered Ancient Cities. (origin_x/y/z) = the structure
-                // bounding-box min corner — the stable dedup identity across every
-                // chunk of the city; the min/max_* region bounds may be Y-clamped.
+                // (origin_x/y/z) is the structure's min corner, the one identity every
+                // chunk of the city agrees on.
                 stmt.execute(
                     """
                     CREATE TABLE IF NOT EXISTS cities (
@@ -111,7 +108,7 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
                     )
                     """.trimIndent()
                 )
-                // Per-piece bounding boxes — exact chest-provenance bounds.
+                // MySQL has no CREATE INDEX IF NOT EXISTS, so there the index is declared inline.
                 stmt.execute(
                     """
                     CREATE TABLE IF NOT EXISTS city_pieces (
@@ -119,29 +116,26 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
                         city_id INT NOT NULL,
                         min_x INT NOT NULL, min_y INT NOT NULL, min_z INT NOT NULL,
                         max_x INT NOT NULL, max_y INT NOT NULL, max_z INT NOT NULL,
+                        ${if (mysql) "INDEX idx_city_pieces_city (city_id)," else ""}
                         FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
                     )
                     """.trimIndent()
                 )
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_city_pieces_city ON city_pieces(city_id)")
+                if (!mysql) stmt.execute("CREATE INDEX IF NOT EXISTS idx_city_pieces_city ON city_pieces(city_id)")
 
-                // Per-player private container copies (Lootr-style). One row per
-                // (city, container position, player). Cleared per city on reset.
                 stmt.execute(
                     """
                     CREATE TABLE IF NOT EXISTS player_container_loot (
                         city_id INT NOT NULL,
                         x INT NOT NULL, y INT NOT NULL, z INT NOT NULL,
                         player_uuid VARCHAR(36) NOT NULL,
-                        contents TEXT NOT NULL,
+                        contents $bigText NOT NULL,
                         updated_at BIGINT NOT NULL,
                         PRIMARY KEY (city_id, x, y, z, player_uuid),
                         FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
                     )
                     """.trimIndent()
                 )
-                // Per-(city, player) admin stats. One row, upserted as a player
-                // loots / triggers protection / spends time / dies in a city.
                 stmt.execute(
                     """
                     CREATE TABLE IF NOT EXISTS city_player_stats (
@@ -157,8 +151,6 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
                     )
                     """.trimIndent()
                 )
-                // Per-city loot bans. A banned player can still walk through the
-                // city but can't open its containers.
                 stmt.execute(
                     """
                     CREATE TABLE IF NOT EXISTS city_bans (
@@ -172,15 +164,14 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
                     )
                     """.trimIndent()
                 )
-                // Shared per-container template: the canonical contents every
-                // first-open copy is cloned from (materialized by rolling the
-                // vanilla loot table). PERSISTS across resets so op edits stick.
+                // The shared contents every first-open copy is cloned from. Kept across
+                // loot refreshes so edits made by staff stick.
                 stmt.execute(
                     """
                     CREATE TABLE IF NOT EXISTS container_template (
                         city_id INT NOT NULL,
                         x INT NOT NULL, y INT NOT NULL, z INT NOT NULL,
-                        contents TEXT NOT NULL,
+                        contents $bigText NOT NULL,
                         material VARCHAR(64) NOT NULL,
                         updated_at BIGINT NOT NULL,
                         PRIMARY KEY (city_id, x, y, z),
@@ -188,14 +179,74 @@ class DatabaseManager(private val plugin: BetterAncientCities) {
                     )
                     """.trimIndent()
                 )
+                stmt.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS plugin_meta (
+                        meta_key VARCHAR(64) NOT NULL PRIMARY KEY,
+                        meta_value VARCHAR(255) NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+    }
+
+    private fun migrate() {
+        connection.use { conn ->
+            val version = conn.prepareStatement("SELECT meta_value FROM plugin_meta WHERE meta_key = 'schema_version'").use { stmt ->
+                stmt.executeQuery().use { rs -> if (rs.next()) rs.getString(1).toIntOrNull() ?: 1 else 1 }
+            }
+            if (version >= SCHEMA_VERSION) return
+
+            conn.autoCommit = false
+            try {
+                if (version < 2) {
+                    // Cities saved before schema 2 had their far edges stored one block
+                    // short (the structure box max is already inclusive).
+                    conn.createStatement().use { stmt ->
+                        val cities = stmt.executeUpdate("UPDATE cities SET max_x = max_x + 1, max_y = max_y + 1, max_z = max_z + 1")
+                        stmt.executeUpdate("UPDATE city_pieces SET max_x = max_x + 1, max_y = max_y + 1, max_z = max_z + 1")
+                        if (cities > 0) plugin.logger.info("Corrected the edges of $cities saved Ancient ${if (cities == 1) "City" else "Cities"}. Nothing to do on your end.")
+                    }
+                }
+                val upsert = if (_databaseType == DatabaseType.MYSQL)
+                    "INSERT INTO plugin_meta (meta_key, meta_value) VALUES ('schema_version', ?) ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value)"
+                else
+                    "INSERT INTO plugin_meta (meta_key, meta_value) VALUES ('schema_version', ?) ON CONFLICT(meta_key) DO UPDATE SET meta_value = excluded.meta_value"
+                conn.prepareStatement(upsert).use { stmt ->
+                    stmt.setString(1, SCHEMA_VERSION.toString())
+                    stmt.executeUpdate()
+                }
+                conn.commit()
+            } catch (e: Exception) {
+                conn.rollback()
+                throw e
+            } finally {
+                conn.autoCommit = true
+            }
+
+            // MySQL cannot roll back a column change, so it runs on its own after the commit.
+            if (version < 2 && _databaseType == DatabaseType.MYSQL) {
+                try {
+                    conn.createStatement().use { stmt ->
+                        stmt.execute("ALTER TABLE player_container_loot MODIFY contents MEDIUMTEXT NOT NULL")
+                        stmt.execute("ALTER TABLE container_template MODIFY contents MEDIUMTEXT NOT NULL")
+                    }
+                } catch (e: Exception) {
+                    plugin.logger.warning("Could not make room for bigger chest contents in MySQL: ${e.message}")
+                }
             }
         }
     }
 
     fun close() {
-        if (::dataSource.isInitialized && !dataSource.isClosed) {
+        if (isOpen) {
             dataSource.close()
-            plugin.logger.info("Database pool closed")
+            plugin.logger.info("Database closed")
         }
+    }
+
+    private companion object {
+        const val SCHEMA_VERSION = 2
     }
 }

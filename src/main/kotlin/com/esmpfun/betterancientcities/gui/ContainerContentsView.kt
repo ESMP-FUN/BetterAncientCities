@@ -12,17 +12,9 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 /**
- * Read-only display of a container's contents. Items are shown but not
- * interactive (the central listener cancels clicks on wired slots).
- *
- * When [template] is supplied (a player-copy view), each slot is diffed against
- * the original loot so you can see at a glance what the player took, without
- * remembering the original contents:
- *  - **Removed** (had loot, now empty) → red pane; hover shows the original item.
- *  - **Modified** (fewer / a different item than the original) → the current item
- *    with a yellow "modified" tag and the original in its lore.
- *  - **Unchanged** → shown plainly.
- * With [template] null (a template/original view) items are just displayed.
+ * Shows a chest's contents without letting anything be taken. With a [template]
+ * (a player's copy) each slot is compared to the original loot: taken items become
+ * a red pane, partly taken or swapped items glow with the original in their lore.
  */
 class ContainerContentsView(
     private val plugin: BetterAncientCities,
@@ -47,9 +39,8 @@ class ContainerContentsView(
         val capacity = navRow * 9
 
         if (template != null) {
-            // Diff legend in the nav row.
-            set(navRow * 9 + 4, guiItem(Material.PAPER, "<gray>Diff vs. original loot",
-                listOf("<red>Red pane <gray>= taken (removed)", "<aqua>Glint <gray>= partly taken / changed", "<white>Plain <gray>= untouched")))
+            set(navRow * 9 + 4, guiItem(Material.PAPER, "<gray>Compared with the original loot",
+                listOf("<red>Red pane<gray>: taken", "<aqua>Glowing<gray>: partly taken or swapped", "<white>Plain<gray>: not touched")))
         }
 
         for (i in 0 until capacity) {
@@ -60,23 +51,23 @@ class ContainerContentsView(
                 template == null -> cur
                 tmpl != null && cur == null -> removedMarker(tmpl)
                 tmpl != null && cur != null && isModified(cur, tmpl) -> modifiedItem(cur, tmpl)
-                else -> cur // unchanged, or player-added (cur with no tmpl)
+                else -> cur
             }
             if (rendered != null) set(i, VcGuiItem.wrap(rendered))
         }
 
-        set(navRow * 9, guiItem(Material.ARROW, "<white>◀ Back") { ctx -> back(ctx.player) })
+        set(navRow * 9, guiItem(Material.ARROW, "<white>« Back") { ctx -> back(ctx.player) })
         set(navRow * 9 + 8, guiItem(Material.BARRIER, "<red>Close") { ctx -> ctx.player.closeInventory() })
     }
 
     private fun isModified(cur: ItemStack, tmpl: ItemStack): Boolean =
         cur.type != tmpl.type || cur.amount < tmpl.amount
 
-    /** A red pane standing in for a slot whose loot the player removed entirely. */
+    /** A red pane in place of loot the player took completely. */
     private fun removedMarker(original: ItemStack): ItemStack {
         val pane = ItemStack(Material.RED_STAINED_GLASS_PANE, 1)
         pane.editMeta { meta ->
-            meta.displayName(mm.deserialize("<red>Taken (removed)").decoration(TextDecoration.ITALIC, false))
+            meta.displayName(mm.deserialize("<red>Taken").decoration(TextDecoration.ITALIC, false))
             meta.lore(listOf(
                 mm.deserialize("<gray>Originally: <white>${original.amount}x ${itemName(original)}")
                     .decoration(TextDecoration.ITALIC, false),
@@ -85,21 +76,19 @@ class ContainerContentsView(
         return pane
     }
 
-    /** The player's current item, tagged yellow + a glint with the original in
-     *  its lore. The glint is the closest to a "highlight" possible in a normal
-     *  chest inventory — true per-cell background colour needs a resource pack. */
+    /** The player's item, glowing, with the original in its lore. */
     private fun modifiedItem(cur: ItemStack, tmpl: ItemStack): ItemStack {
         val out = cur.clone()
         out.editMeta { meta ->
             meta.setEnchantmentGlintOverride(true)
             val baseName = if (meta.hasDisplayName()) meta.displayName()!! else Component.text(itemName(cur))
             meta.displayName(
-                mm.deserialize("<yellow>⚠ ").decoration(TextDecoration.ITALIC, false).append(baseName)
+                mm.deserialize("<yellow>Changed: ").decoration(TextDecoration.ITALIC, false).append(baseName)
             )
             val lore = (meta.lore()?.toMutableList() ?: mutableListOf())
             lore.add(mm.deserialize("<gray>Original: <white>${tmpl.amount}x ${itemName(tmpl)}").decoration(TextDecoration.ITALIC, false))
             val delta = if (cur.type == tmpl.type) "<yellow>${tmpl.amount - cur.amount} taken<gray>, ${cur.amount} left"
-                else "<yellow>replaced<gray> (was a different item)"
+                else "<yellow>Swapped<gray> for a different item"
             lore.add(mm.deserialize(delta).decoration(TextDecoration.ITALIC, false))
             meta.lore(lore)
         }

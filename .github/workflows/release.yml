@@ -36,7 +36,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      # mc26 companion jar — built from the mc26 branch (merge master -> mc26 before tagging)
+      # mc26 companion jar, built from the mc26 branch (merge master into mc26 before tagging)
       - name: Build and attach mc26 jar
         run: |
           if git fetch origin mc26 2>/dev/null; then
@@ -44,7 +44,20 @@ jobs:
             JAVA_HOME="$JAVA_HOME_25_X64" ./gradlew build -x test
             gh release upload "$GITHUB_REF_NAME" build/libs/*-mc26.jar || echo "no mc26 jar produced"
           else
-            echo "no mc26 branch — skipping"
+            echo "no mc26 branch, skipping"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # mc263 companion jar, built from the mc263 branch (merge master into mc263 before tagging)
+      - name: Build and attach mc263 jar
+        run: |
+          if git fetch origin mc263 2>/dev/null; then
+            git checkout -f FETCH_HEAD
+            JAVA_HOME="$JAVA_HOME_25_X64" ./gradlew build -x test
+            gh release upload "$GITHUB_REF_NAME" build/libs/*-mc263.jar || echo "no mc263 jar produced"
+          else
+            echo "no mc263 branch, skipping"
           fi
         env:
           GH_TOKEN: ${{ github.token }}

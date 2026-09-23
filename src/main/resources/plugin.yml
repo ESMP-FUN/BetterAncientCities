@@ -4,40 +4,40 @@ main: com.esmpfun.betterancientcities.BetterAncientCities
 api-version: '26.1'
 folia-supported: true
 authors: [darkstarworks]
-description: Turns naturally-generated Ancient Cities into renewable, multiplayer-friendly content — auto-discovery, per-player chest loot, griefing protection, and (later) automatic resets.
+description: Makes Ancient Cities reusable on multiplayer servers. Every player gets their own chest loot, loot refreshes on a timer, and the city is protected from griefing.
 website: https://github.com/ESMP-FUN/BetterAncientCities
 
 commands:
   ancient:
-    description: Better Ancient Cities admin command
+    description: Manage Ancient Cities
     usage: /ancient <subcommand>
     aliases: [bac, acp, ancientcity, betterancientcities]
     permission: bac.admin
 
 permissions:
   bac.admin:
-    description: Access to all BetterAncientCities admin commands
+    description: Use /ancient and the menu
     default: op
   bac.discovery.notify:
-    description: Receive in-game notifications when an Ancient City is auto-discovered
+    description: Get a chat message when a new Ancient City is found
     default: op
   bac.bypass.protection:
-    description: Bypass Ancient City griefing protection (break/place freely)
+    description: Break and place blocks in protected Ancient Cities
     default: op
 
-  # Legacy pre-2.0 aliases
+  # Names from before 2.0. They only grant the new permission.
   acp.admin:
-    description: Legacy alias of bac.admin
+    description: Old name for bac.admin
     default: false
     children:
       bac.admin: true
   acp.discovery.notify:
-    description: Legacy alias of bac.discovery.notify
+    description: Old name for bac.discovery.notify
     default: false
     children:
       bac.discovery.notify: true
   acp.bypass.protection:
-    description: Legacy alias of bac.bypass.protection
+    description: Old name for bac.bypass.protection
     default: false
     children:
       bac.bypass.protection: true
