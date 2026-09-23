@@ -103,6 +103,11 @@ tasks {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
 
+        // The X DevAPI (jdbc:mysqlx) is never used; only classic jdbc:mysql connections are.
+        exclude("com/mysql/cj/x/**")
+        exclude("com/mysql/cj/xdevapi/**")
+        exclude("META-INF/maven/**")
+
         // The MySQL connector is signed; its signature files must go or the jar will not load.
         exclude("META-INF/*.SF")
         exclude("META-INF/*.DSA")
