@@ -102,7 +102,6 @@ class BetterAncientCities : JavaPlugin() {
             it.setExecutor(executor)
             it.tabCompleter = executor
         }
-        warnIfNewerMinecraft()
         startUpdater()
 
         launchAsync {
@@ -177,21 +176,8 @@ class BetterAncientCities : JavaPlugin() {
         }
     }
 
-    /** The jar name this build is published under. The master and mc263 builds differ here. */
-    private fun isOwnJar(name: String): Boolean = name.endsWith("-mc26.jar")
-
-    /** This jar still starts on 26.3, but would follow the 26.0 to 26.2 updates there. */
-    private fun warnIfNewerMinecraft() {
-        val parts = runCatching {
-            server.minecraftVersion.substringBefore('-').split('.').mapNotNull { it.toIntOrNull() }
-        }.getOrDefault(emptyList())
-        val major = parts.getOrElse(0) { 0 }
-        val minor = parts.getOrElse(1) { 0 }
-        if (major > 26 || (major == 26 && minor >= 3)) {
-            logger.warning("You are using the download for Minecraft 26.0 to 26.2, but this server runs $major.$minor.")
-            logger.warning("Please switch to the BetterAncientCities jar ending in -mc263, so you get the right updates.")
-        }
-    }
+    /** The jar name this build is published under. The master and mc26 builds differ here. */
+    private fun isOwnJar(name: String): Boolean = name.endsWith("-mc263.jar")
 
     fun handleUpdateCommand(sender: CommandSender, args: Array<out String>) {
         val sub = updateSubcommand

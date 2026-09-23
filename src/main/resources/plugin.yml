@@ -1,7 +1,7 @@
 name: BetterAncientCities
 version: '${version}'
 main: com.esmpfun.betterancientcities.BetterAncientCities
-api-version: '26.1'
+api-version: '26.3'
 folia-supported: true
 authors: [darkstarworks]
 description: Makes Ancient Cities reusable on multiplayer servers. Every player gets their own chest loot, loot refreshes on a timer, and the city is protected from griefing.
