@@ -6,29 +6,29 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 ### Added
-- **A separate download for Minecraft 26.3.** Servers on 26.3 should use the jar ending in `-mc263`. The `-mc26` jar is for 26.0 to 26.2, and the plain jar for 1.21.x.
+- **A separate download for Minecraft 26.3.** Servers on 26.3 should use the jar ending in `-mc263`.
 - **Protection now also stops buckets, fire, pistons and mobs.** Before, only breaking, placing and explosions were stopped, so a city could still be flooded, burned, pulled apart with pistons or changed by mobs such as endermen.
 - **Update settings in `config.yml`.** A new `update` section sets how the update checker behaves, including `mode: off`.
 - **New settings are added to your `config.yml` by themselves** when you update. Your own settings are kept, and the old file is saved as `config.yml.bak`.
-- **Deleting a city asks first.** `/ancient delete <number>` now says what will be lost and needs `confirm` at the end. In the menu, the delete button needs a shift-click.
+- **Deleting a city now asks first.** `/ancient delete <number>` now tells you what will be lost and needs confirmation. In the menu, the delete button needs a shift-click.
 
 ### Fixed
-- **City chests on the edge of a building now give every player their own loot.** Each building was stored one block short on its east, top and south sides. A chest standing on one of those edges was treated as an ordinary chest, so the first player took everything, and protection was a block thinner there. Cities you already have are corrected by themselves at startup.
-- **Items can no longer be duplicated out of a city chest.** Three ways were closed: opening the same chest again quickly on a busy server could hand back what was in it before you took things out; a short database hiccup could hand you the full chest again; and restarting or reloading the server while a chest was open, or just after closing it, did the same. Chests are now saved before anything else can read them, and whatever is still open is saved at shutdown.
+- **City chests on the edge of a building now give every player their own loot.** Cities you already have are corrected by themselves at startup.
+- **Items can no longer be duplicated out of a city chest.** Three methods are closed. Whatever chest is still open is saved at shutdown.
 - **A database hiccup no longer replaces the loot staff set up for a chest.** It used to roll new loot over the edited loot.
 - **Two players opening a brand-new chest at the same moment now find the same loot.**
-- **MySQL works.** The plugin could not start on MySQL (it did on MariaDB), because of how one table was set up.
+- **MySQL works.** One table broke MySQL entirely.
 - **Big chest contents save on MySQL.** A chest full of shulker boxes could be too large to save, so the chest went back to how it was before.
-- **Snapshots saved before 2.0 restore again.** Snapshots from the AncientCityPro days could not be read after the rename, so those cities could not be restored.
-- **Restoring a city no longer freezes the server.** A whole city was put back in a single moment, which could stall a server for seconds. It now works through the city a chunk at a time. Saving a snapshot also uses far less memory.
+- **Snapshots saved before 2.0 restore again.** Snapshots from before the plugin-rename could not be read, so those cities could not be restored.
+- **Restoring a city no longer freezes the server.** It now works through the city a chunk at a time. Saving a snapshot also uses far less memory.
 - **Saving and restoring the same city at once is refused** with a message, instead of both running and mixing up the result.
 - **Opening the chest that starts a loot refresh no longer waits for the city to be restored** (with `snapshot.auto-reset-on-refresh` on). The restore now runs next to it.
 - **Teleporting to a city puts you inside it, on solid ground.** `/ancient tp` and the Teleport button dropped you above the city, inside solid deepslate. On Folia they did not work at all.
-- **Banning a player who is not online no longer freezes the server.** A name the server did not know yet was looked up with Mojang while everything waited. Names are now only looked up among players who have joined before.
+- **Banning a player who is not online no longer freezes the server.** Names are now only looked up among players who have joined before.
 - **Time spent in a city is no longer lost on restart,** and teleporting in or out of a city now counts.
 - **The "Approving city" message above the hotbar always goes away,** even when approving fails.
 - **A city that could not be saved because the database was briefly away is found again** the next time a player goes near it, instead of after a restart.
-- **Deleting a city also deletes its snapshot,** and the city is found again when players next go near it, instead of only after a restart.
+- **Deleting a city also deletes its snapshot,** and the city is found again when players go near it again, instead of only after a restart.
 - **Update downloads pick the right jar.** Every release carries all three downloads, and the update checker took whichever came first, which could be the one for a different Minecraft version.
 - **Stopping the server during an update check no longer prints errors.**
 - **Spectators opening a city chest no longer use up their loot** for when they play normally.
@@ -40,7 +40,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - **Plainer wording** in chat, the menu, `config.yml` and the documentation.
-- **A smaller download,** about 1 MB less. Parts of the MySQL driver the plugin never uses are left out.
+- **A smaller download,** about 1 MB less, thanks to some code cleanup.
 
 ### Note
 - **Snapshots saved by this version cannot be read by older versions.** If you ever go back to an older version, save your snapshots again after downgrading.
