@@ -6,20 +6,17 @@ import com.esmpfun.betterancientcities.gui.framework.VcGui
 import com.esmpfun.betterancientcities.managers.ContainerLootManager
 import com.esmpfun.betterancientcities.models.City
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 
-/**
- * Per-city container browser: every materialized container template, shown as its
- * own block icon with a loot summary. Click one to inspect its canonical loot.
- * Templates are prefetched by [MenuService.openContainerList].
- */
+/** Every chest in a city that has been opened at least once, with the loot everyone finds in it. */
 class ContainerListView(
     private val plugin: BetterAncientCities,
     private val menu: MenuService,
     private val city: City,
     private val templates: List<ContainerLootManager.TemplateRow>,
     private val page: Int = 0,
-) : VcGui(6, Component.text("§5City #${city.id} — Containers"), Holder(), "bac.admin") {
+) : VcGui(6, Component.text("City #${city.id} chests", NamedTextColor.DARK_PURPLE), Holder(), "bac.admin") {
 
     class Holder : BaseHolder()
 
@@ -34,35 +31,35 @@ class ContainerListView(
         val slice = templates.drop(p * PER_PAGE).take(PER_PAGE)
 
         if (templates.isEmpty()) {
-            set(22, guiItem(Material.BARRIER, "<gray>No container templates yet",
-                listOf("<gray>A container's template is created the first", "<gray>time any player opens it in this city.")))
+            set(22, guiItem(Material.BARRIER, "<gray>No chests opened yet",
+                listOf("<gray>A chest shows up here once any", "<gray>player has opened it.")))
         }
 
         slice.forEachIndexed { i, t ->
             val count = t.contents.count { it != null && !it.type.isAir }
             set(i, guiItem(
                 t.material,
-                "<aqua>Container <white>${t.pos.x}, ${t.pos.y}, ${t.pos.z}",
-                listOf("<gray>Loot items: <white>$count", "", "<yellow>Click to view loot")
+                "<aqua>Chest at <white>${t.pos.x}, ${t.pos.y}, ${t.pos.z}",
+                listOf("<gray>Filled slots: <white>$count", "", "<yellow>Click to see the loot")
             ) { ctx ->
                 ContainerContentsView(
                     plugin,
-                    Component.text("§5Loot @ ${t.pos.x},${t.pos.y},${t.pos.z}"),
+                    Component.text("Loot at ${t.pos.x}, ${t.pos.y}, ${t.pos.z}", NamedTextColor.DARK_PURPLE),
                     t.contents,
                     back = { pl -> menu.openContainerList(pl, city) },
                 ).open(ctx.player)
             })
         }
 
-        if (p > 0) set(48, guiItem(Material.ARROW, "<white>◀ Previous") { ctx ->
+        if (p > 0) set(48, guiItem(Material.ARROW, "<white>« Previous page") { ctx ->
             ContainerListView(plugin, menu, city, templates, p - 1).open(ctx.player)
         })
         set(49, guiItem(Material.BOOK, "<gray>Page <white>${p + 1}<gray>/<white>$pages",
-            listOf("<gray>${templates.size} containers")))
-        if (p < pages - 1) set(50, guiItem(Material.ARROW, "<white>Next ▶") { ctx ->
+            listOf("<gray>${templates.size} chests")))
+        if (p < pages - 1) set(50, guiItem(Material.ARROW, "<white>Next page »") { ctx ->
             ContainerListView(plugin, menu, city, templates, p + 1).open(ctx.player)
         })
-        set(45, guiItem(Material.ARROW, "<white>◀ Back") { ctx -> menu.openCityDetail(ctx.player, city) })
+        set(45, guiItem(Material.ARROW, "<white>« Back") { ctx -> menu.openCityDetail(ctx.player, city) })
         set(53, guiItem(Material.BARRIER, "<red>Close") { ctx -> ctx.player.closeInventory() })
     }
 }

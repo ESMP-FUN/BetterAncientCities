@@ -7,41 +7,25 @@ import dev.faststats.bukkit.BukkitContext
 import dev.faststats.data.Metric
 
 /**
- * FastStats integration. Anonymous usage metrics that drive feature
- * prioritization: which database backend servers actually run, whether
- * discovery approval is required in the wild, per-player loot adoption,
- * and fleet city counts.
+ * Anonymous usage statistics through FastStats: database type, discovery settings,
+ * whether per-player loot is on, and how many cities a server has. Turned off by
+ * `metrics.enabled: false` or FastStats' own `plugins/faststats/config.properties`.
  *
- * Respect knobs (either disables collection entirely):
- *  - ACP's own `metrics.enabled` in config.yml
- *  - FastStats' global opt-out (`plugins/faststats/config.properties`)
+ * Error reports are separate and off unless `metrics.error-reporting` is true,
+ * because a stack trace can contain file paths.
  *
- * Error reporting is a separate, opt-in concern: it ships stack traces
- * (which can carry paths and third-party plugin internals) rather than
- * the aggregate counters above, so it stays off unless an admin sets
- * `metrics.error-reporting: true`. It also requires `metrics.enabled`,
- * since the whole context is skipped when metrics are off.
- *
- * Every metric callable below is evaluated by FastStats on its own
- * submission schedule, off the main thread — so each one reads cheap
- * in-memory state only and must stay thread-safe and side-effect free.
+ * FastStats reads each value off the main thread, so they only read memory.
  */
 object MetricsService {
 
-    /**
-     * FastStats project token for BetterAncientCities. A blank value
-     * disables metrics init entirely.
-     */
     private const val FASTSTATS_TOKEN: String = "066b635ec43f8e5faaf5b6d4dc8526de"
 
-    /** Live context, retained so [shutdown] can tear it down on disable. */
     private var context: BukkitContext? = null
 
     fun init(plugin: BetterAncientCities): String {
-        if (FASTSTATS_TOKEN.isBlank()) return "Disabled (no token)"
-        if (!plugin.config.getBoolean("metrics.enabled", true)) return "Disabled (config)"
+        if (FASTSTATS_TOKEN.isBlank()) return "off"
+        if (!plugin.config.getBoolean("metrics.enabled", true)) return "off (metrics.enabled is false)"
 
-        // Opt-in, and deliberately defaulted to false — unlike metrics.enabled.
         val errorReporting = plugin.config.getBoolean("metrics.error-reporting", false)
 
         return try {
@@ -66,22 +50,20 @@ object MetricsService {
                         .create()
                 }
 
-            // contextAware() hooks uncaught errors from this plugin's class
-            // loader, so only attach it when the admin has asked for it.
             if (errorReporting) {
                 factory = factory.errorTrackerService(ErrorTracker.contextAware())
             }
 
             context = factory.create().also { it.ready() }
 
-            if (errorReporting) "Enabled (with error reporting)" else "Enabled"
+            if (errorReporting) "on, with error reports" else "on"
         } catch (e: Exception) {
-            plugin.logger.warning("FastStats init failed: ${e.message}")
-            "Failed"
+            plugin.logger.warning("Usage statistics could not start: ${e.message}")
+            "off"
         }
     }
 
-    /** Flushes and stops submission. Safe to call when init never ran. */
+    /** Safe to call when [init] never ran. */
     fun shutdown() {
         context?.shutdown()
         context = null

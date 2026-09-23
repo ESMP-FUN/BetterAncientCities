@@ -2,36 +2,51 @@
 
 ## "I can still break blocks in an approved city"
 
-You're almost certainly an **operator**, and operators have `bac.bypass.protection` by default. This is intended (admins need to build/fix). Confirm protection is actually working with:
+You are almost certainly an **operator**, and operators have `bac.bypass.protection`, so staff can repair and build. Look at a building block and type:
 
 ```
 /ancient check
 ```
 
-while looking at a structure block — it reports protection independently of your bypass. To test as a normal player, use a non-op account or negate the permission (see [Permissions](reference/permissions.md)).
+It tells you whether the block is protected, ignoring your own bypass. To test as a normal player, use an account that is not an operator, or take the permission away (see [Permissions](reference/permissions.md)).
 
-## A discovered city isn't active
+## A city was found but nothing happens
 
-New cities are **pending** until approved (`discovery.require-approval: true`). Approve it in `/ancient menu` or with `/ancient approve <id>`. To make discoveries active immediately, set `discovery.require-approval: false`.
+New cities are **pending** until approved (`discovery.require-approval: true`). Approve it in `/ancient menu` or with `/ancient approve <number>`. To make new cities active straight away, set `discovery.require-approval: false`.
 
-## Nothing gets discovered
+## No cities are found
 
-* Discovery is driven by chunk loads — travel into the city, or rely on the startup sweep for already-loaded chunks.
-* Confirm `discovery.enabled: true`.
-* Discovery only runs in **Overworld-type** worlds (the Deep Dark).
+* Cities are found as their area loads. Go near one, or let the check at startup find the ones that are already loaded.
+* Make sure `discovery.enabled` is `true`.
+* Make sure the world is not in `discovery.excluded-worlds`.
+* Only overworld-type worlds are checked, because that is where Ancient Cities are.
 
-## A snapshot restore leaves some blocks out
+## A deleted city came back
 
-Re-capture after any change to `protection.piece-padding`, since capture covers the padded piece region. The console logs `stored N/total` on capture and `placed N/total` on restore; if there are failures it names the first few with coordinates — check the server log for `[Snapshot]` warnings.
+A deleted city is found again the next time players go near it. To keep the plugin out of a whole world, add the world to `discovery.excluded-worlds`, then delete its cities.
+
+## A chest says "This chest could not be opened right now"
+
+The plugin could not read the database for a moment. Nothing was lost. Try again; if it keeps happening, the console says why.
+
+If the console says a player's copy "could not be read", give them a fresh one with `/ancient resetloot <number> <player>`.
+
+## A restore leaves some blocks out
+
+Save a new snapshot after changing `protection.piece-padding`, because a snapshot covers the area that was protected when it was saved. The console says how many blocks were saved and restored, and names any that failed.
 
 ## Loot never refreshes
 
-The refresh cycle is **per-city and starts on first-loot**. If no one has looted a city since it was approved, its timer hasn't started. Check `loot.refresh-hours` (0 disables refresh). You can always force it with **Refresh loot now** in the GUI.
+Each city's clock starts when the city is **first looted**. If nobody has looted it since it was approved, its clock has not started. Check `loot.refresh-hours` (0 turns refreshing off). **Refresh loot now** in the menu refreshes a city straight away.
 
-## Config changes don't apply
+## Settings don't apply
 
-Run `/ancient reload` after editing `config.yml`. If the file won't load at all, check for **TAB characters** — YAML requires spaces only.
+Type `/ancient reload` after editing `config.yml`. The `database`, `update` and `metrics` sections need a restart. If the file won't load at all, look for **TAB characters**; YAML only allows spaces.
+
+## "Better Ancient Cities could not start"
+
+The database could not be opened. The console lines just above say why. With `type: mysql`, check the host, port, database name, username and password in `config.yml`, and that the MySQL server is running.
 
 ## Reporting bugs
 
-Include your server version (Paper/Folia + Minecraft version), the BetterAncientCities version, and any `[BetterAncientCities]` / `[Snapshot]` lines from the console.
+Include your server software and Minecraft version, the Better Ancient Cities version, and any `[BetterAncientCities]` lines from the console.

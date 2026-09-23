@@ -11,22 +11,16 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Owns the in-memory city cache and all `cities`/`city_pieces` SQL (mirrors how
- * TCP's ChamberManager owns its own persistence). A server has at most a handful
- * of registered cities, so the cache is fully preloaded with no eviction and
- * spatial lookups are a linear scan.
+ * The city cache and all `cities` / `city_pieces` SQL. A server has a handful of
+ * cities at most, so everything is preloaded and lookups are a linear scan.
  */
 class CityManager(private val plugin: BetterAncientCities) {
 
     private val cache = ConcurrentHashMap<Int, City>()
 
     /**
-     * Per-city loot-cycle start (epoch ms; 0 = no active cycle). A cycle is a
-     * lazily-evaluated per-city refresh window: the first player to loot a city
-     * with no active (or an expired) cycle starts a new one, which clears
-     * everyone's per-player copies so the city's loot is fresh again. No
-     * scheduler — the timer is only ever checked on a container open — so cities
-     * refresh staggered by when each was first looted, never all at once.
+     * Per-city loot-cycle start in epoch ms (0 = none). Only checked when a chest is
+     * opened, so cities refresh staggered by when each was first looted.
      */
     private val cycleStarts = ConcurrentHashMap<Int, AtomicLong>()
 
@@ -63,7 +57,7 @@ class CityManager(private val plugin: BetterAncientCities) {
                 }
             }
         }
-        plugin.logger.info("Loaded ${cache.size} Ancient ${if (cache.size == 1) "City" else "Cities"} into cache")
+        plugin.logger.info("Loaded ${cache.size} Ancient ${if (cache.size == 1) "City" else "Cities"}")
     }
 
     private fun loadPieces(conn: java.sql.Connection, cityId: Int): List<IntBox> {
@@ -84,7 +78,7 @@ class CityManager(private val plugin: BetterAncientCities) {
         return out
     }
 
-    /** Whether a city with this origin already exists (dedup guard for discovery). */
+    /** Whether a city with this origin is already registered. */
     suspend fun existsAt(world: String, origin: Triple<Int, Int, Int>): Boolean =
         withContext(Dispatchers.IO) {
             cache.values.any { it.world == world && it.origin == origin } || run {
@@ -101,9 +95,8 @@ class CityManager(private val plugin: BetterAncientCities) {
         }
 
     /**
-     * Persists a newly-discovered city and its pieces, caches it, and returns it —
-     * or null if a row with this origin already exists (UNIQUE collision, e.g. a
-     * concurrent discovery). Idempotent against double-fire.
+     * Saves a newly found city and its pieces and returns it, or null when it could
+     * not be saved (usually because another chunk of the same city got there first).
      */
     suspend fun registerCity(
         world: String,
@@ -154,19 +147,15 @@ class CityManager(private val plugin: BetterAncientCities) {
                 }
             }
         } catch (e: Exception) {
-            // Likely a UNIQUE collision from a concurrent discovery — treat as already-registered.
-            plugin.logger.warning("[CityManager] registerCity failed for $world @ $origin: ${e.message}")
+            plugin.logger.warning("Could not save the Ancient City found in $world at ${origin.first}, ${origin.second}, ${origin.third}: ${e.message}")
             null
         }
     }
 
     /**
-     * Atomically decides whether THIS call should start a new loot cycle for
-     * [cityId]: true when there's no active cycle or the current one is older than
-     * [refreshMs]. Exactly one concurrent caller wins (CAS), so only one clears
-     * the city's copies. The winner should call [ContainerLootManager.clearCity]
-     * and [persistCycleStart]. Synchronous + thread-safe; [refreshMs] <= 0
-     * disables refresh entirely (always false).
+     * True for exactly one caller when [cityId] has no loot cycle or its cycle is
+     * older than [refreshMs]. That caller clears the copies and calls
+     * [persistCycleStart]. [refreshMs] of 0 or less turns refreshing off.
      */
     fun beginCycleIfDue(cityId: Int, refreshMs: Long): Boolean {
         if (refreshMs <= 0L) return false
@@ -175,8 +164,7 @@ class CityManager(private val plugin: BetterAncientCities) {
             val cur = al.get()
             val now = System.currentTimeMillis()
             if (cur != 0L && now - cur < refreshMs) return false // active cycle, not due
-            if (al.compareAndSet(cur, now)) return true          // we started the new cycle
-            // lost the race — another thread advanced it; re-read and re-check
+            if (al.compareAndSet(cur, now)) return true
         }
     }
 
@@ -192,7 +180,7 @@ class CityManager(private val plugin: BetterAncientCities) {
                 }
             }
         } catch (e: Exception) {
-            plugin.logger.warning("[CityManager] persistCycleStart($cityId) failed: ${e.message}")
+            plugin.logger.warning("Could not save the loot refresh time of city #$cityId: ${e.message}")
         }
     }
 
@@ -209,42 +197,34 @@ class CityManager(private val plugin: BetterAncientCities) {
             }
             cache[id] = city.copy(snapshotFile = fileName)
         } catch (e: Exception) {
-            plugin.logger.warning("[CityManager] setSnapshotFile($id) failed: ${e.message}")
+            plugin.logger.warning("Could not record the snapshot of city #$id: ${e.message}")
         }
     }
 
-    /** The APPROVED city whose region envelope contains [loc], or null. Used by
-     *  loot + protection — pending cities are inactive. */
+    /** The approved city whose area contains [loc]. Pending cities are inactive. */
     fun getCachedCityAt(loc: Location): City? =
         cache.values.firstOrNull { it.approved && it.containsInRegion(loc) }
 
-    /** The APPROVED city whose region envelope, expanded by [pad], contains [loc]. */
+    /** The approved city whose area, grown by [pad], contains [loc]. */
     fun getCachedCityInPaddedRegion(loc: Location, pad: Int): City? =
         cache.values.firstOrNull { it.approved && it.containsInPaddedRegion(loc, pad) }
 
-    /** Any city (approved or pending) containing [loc] — for admin/info, not gameplay. */
+    /** Any city, approved or pending, containing [loc]. For staff tools, not gameplay. */
     fun getAnyCityAt(loc: Location): City? =
         cache.values.firstOrNull { it.containsInRegion(loc) }
 
     fun byId(id: Int): City? = cache[id]
 
-    /** All cached cities (read-only snapshot). */
     fun all(): Collection<City> = cache.values.toList()
 
-    fun approved(): List<City> = cache.values.filter { it.approved }
-    fun pending(): List<City> = cache.values.filter { !it.approved }
-
-    /** Cities with an approval+snapshot currently running, so repeated clicks
-     *  (e.g. spamming the chat [approve] link before the slow capture finishes)
-     *  don't kick off duplicate approvals. */
+    /** Cities with an approval running, so a spammed [approve] link starts it once. */
     private val approvingInFlight = ConcurrentHashMap.newKeySet<Int>()
 
-    /** Atomically claims the approval slot for [id]; false if one is already running. */
     fun tryBeginApproval(id: Int): Boolean = approvingInFlight.add(id)
 
     fun endApproval(id: Int) { approvingInFlight.remove(id) }
 
-    /** Approves a pending city (activates loot + protection). Returns false if unknown. */
+    /** Turns on loot and protection for a pending city. False if unknown or not saved. */
     suspend fun approveCity(id: Int): Boolean = withContext(Dispatchers.IO) {
         val city = cache[id] ?: return@withContext false
         try {
@@ -257,26 +237,36 @@ class CityManager(private val plugin: BetterAncientCities) {
             cache[id] = city.copy(approved = true)
             true
         } catch (e: Exception) {
-            plugin.logger.warning("[CityManager] approveCity($id) failed: ${e.message}")
+            plugin.logger.warning("Could not approve city #$id: ${e.message}")
             false
         }
     }
 
+    /**
+     * Removes a city with its saved chests, stats, bans and snapshot. Discovery
+     * registers it again the next time one of its chunks loads, unless its world
+     * is excluded or discovery is off.
+     */
     suspend fun deleteCity(id: Int): Boolean = withContext(Dispatchers.IO) {
+        val city = cache[id]
         try {
-            plugin.databaseManager.connection.use { conn ->
+            val removed = plugin.databaseManager.connection.use { conn ->
                 conn.prepareStatement("DELETE FROM cities WHERE id = ?").use { stmt ->
                     stmt.setInt(1, id)
-                    val removed = stmt.executeUpdate() > 0
-                    if (removed) {
-                        cache.remove(id)
-                        cycleStarts.remove(id)
-                    }
-                    removed
+                    stmt.executeUpdate() > 0
                 }
             }
+            if (removed) {
+                cache.remove(id)
+                cycleStarts.remove(id)
+                plugin.containerLootManager.forgetCity(id)
+                plugin.banManager.forgetCity(id)
+                plugin.snapshotManager.deleteSnapshot(id)
+                city?.let { plugin.discoveryManager.forget(it) }
+            }
+            removed
         } catch (e: Exception) {
-            plugin.logger.warning("[CityManager] deleteCity($id) failed: ${e.message}")
+            plugin.logger.warning("Could not delete city #$id: ${e.message}")
             false
         }
     }

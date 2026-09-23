@@ -1,57 +1,58 @@
 # Quick Start
 
-From a fresh install to a fully-managed, renewable Ancient City in a few steps.
+From a fresh install to a working Ancient City in a few steps.
 
 ## 1. Find a city
 
-Locate an Ancient City the normal way:
+Find an Ancient City the normal way:
 
 ```
 /locate structure ancient_city
 ```
 
-Travel there. As its chunks load, BetterAncientCities discovers it automatically and announces it to online operators:
-<img width="890" height="67" alt="image" src="https://github.com/user-attachments/assets/cc1b5da0-e49f-4f95-8d5c-f7fddb1a858c" />
-```
-[BetterAncientCities] Discovered an Ancient City #1 at -781, -52, -426 in world — pending approval.
-```
+Go there. As soon as the city's area loads, the plugin finds it and tells everyone with `bac.discovery.notify` (operators, by default):
+
+<img width="890" height="67" alt="The chat message shown when a city is found" src="https://github.com/user-attachments/assets/cc1b5da0-e49f-4f95-8d5c-f7fddb1a858c" />
+
+The green coordinates teleport you to the city. **[approve]** switches it on.
 
 ## 2. Approve it
 
-By default a discovered city is **pending** — its loot and protection stay inactive until you approve it. This is a safety step so a mis-detection never goes live on its own.
+A new city starts out **pending**: it is saved, but loot and protection stay off until you approve it. This gives you the chance to check it first.
 
-Open the admin GUI and approve it:
+Approve it in one of three ways:
 
-```
-/ancient menu
-```
+* Click **[approve]** in the chat message.
+* Open `/ancient menu`, click the city, then **Approve city**.
+* Type `/ancient approve 1` (use the city's number from `/ancient list`).
 
-Click the city → **Approve city**. (Or from the command line: `/ancient approve 1`.)
+When a city is approved, its blocks are saved as a snapshot, so you can always put the city back later.
 
-On approval, a **baseline snapshot** is captured automatically, so you always have a restore point.
-
-<div data-gb-custom-block data-tag="hint" data-style="info">
-
-Once you've confirmed discovery works well on your world, set `discovery.require-approval: false` in `config.yml` to make new cities active immediately.
-
-</div>
+{% hint style="info" %}
+Once you trust the discovery on your world, set `discovery.require-approval: false` in `config.yml`. New cities are then active straight away.
+{% endhint %}
 
 ## 3. That's it
 
 The city is now live:
 
-* **Players loot chests** and each gets their own private copy — no more gutted containers for the second player in.
-* **The structure is protected** from griefing.
-* **Loot refreshes** per the `loot.refresh-hours` window (default 12h), per city.
+* **Every player gets their own chests.** The second player to arrive still finds full chests.
+* **The city's buildings are protected** from griefing.
+* **Loot refreshes** 12 hours after the city was first looted (change it with `loot.refresh-hours`).
 
 ## Managing a city
 
-Everything is in `/ancient menu` → click a city:
+Open `/ancient menu` and click a city:
 
-* **Teleport** to it.
-* **Capture snapshot** / **Reset to snapshot** — save the structure, or restore it (reverts griefing and sculk spread).
-* **Refresh loot now** — clear everyone's loot copies so the city is fresh immediately.
-* **Player data** — per-player stats (looted, time, deaths, griefing attempts); left-click a head to see exactly what they looted (with a visual diff vs. the original), shift-left-click to reset their loot, right-click to loot-ban them.
-* **Containers** — browse every container and inspect its loot.
+* **Teleport here.** Takes you to a safe spot in the middle of the city.
+* **Player data.** Chests looted, time spent, deaths and blocked griefing for each player. Click a player to see exactly what they took from each chest. Shift-click to let them loot the city fresh. Right-click to ban them from looting it.
+* **Chests.** See the loot in each chest that has been opened.
+* **Refresh loot now.** Every player finds full chests again, straight away.
+* **Save snapshot** and **Restore from snapshot.** Save the city's blocks, or put them back to undo griefing and sculk spread.
+* **Delete city.** Shift-click to forget the city.
 
-See [Commands](../reference/commands.md) for the full command-line equivalents.
+{% hint style="info" %}
+**Changing a chest for everyone:** sneak and open it. You are then editing what every player finds in that chest. Players who have already opened it keep what they had.
+{% endhint %}
+
+See [Commands](../reference/commands.md) for the same actions as commands.

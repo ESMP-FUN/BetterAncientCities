@@ -8,18 +8,14 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Per-city loot bans. A banned player may still walk through the city but cannot
- * open its containers (enforced in [com.esmpfun.betterancientcities.listeners.ContainerLootListener]).
- *
- * Banned UUIDs are mirrored in memory (preloaded at startup) so the loot hot path
- * can check synchronously without a DB round-trip; full records are read from the
- * DB for listing.
+ * Per-city loot bans. A banned player can walk through the city but not open its
+ * containers. Banned UUIDs are kept in memory so the chest check never waits on
+ * the database.
  */
 class BanManager(private val plugin: BetterAncientCities) {
 
     data class BanRecord(val playerUuid: UUID, val reason: String?, val bannedBy: UUID?, val bannedAt: Long)
 
-    /** cityId -> banned player UUIDs (fast synchronous membership). */
     private val cache = ConcurrentHashMap<Int, MutableSet<UUID>>()
 
     suspend fun preload() = withContext(Dispatchers.IO) {
@@ -36,13 +32,15 @@ class BanManager(private val plugin: BetterAncientCities) {
                 }
             }
         } catch (e: Exception) {
-            plugin.logger.warning("[Bans] preload failed: ${e.message}")
+            plugin.logger.warning("Could not load the loot bans: ${e.message}")
         }
-        plugin.logger.info("Loaded ${cache.values.sumOf { it.size }} city loot ban(s)")
     }
 
-    /** Synchronous: is [player] loot-banned from [cityId]? */
     fun isBanned(cityId: Int, player: UUID): Boolean = cache[cityId]?.contains(player) == true
+
+    fun forgetCity(cityId: Int) {
+        cache.remove(cityId)
+    }
 
     suspend fun ban(cityId: Int, player: UUID, reason: String?, by: UUID?): Boolean = withContext(Dispatchers.IO) {
         val sql = if (plugin.databaseManager.databaseType == DatabaseManager.DatabaseType.MYSQL) {
@@ -57,7 +55,7 @@ class BanManager(private val plugin: BetterAncientCities) {
                 conn.prepareStatement(sql).use { stmt ->
                     stmt.setInt(1, cityId)
                     stmt.setString(2, player.toString())
-                    stmt.setString(3, reason)
+                    stmt.setString(3, reason?.take(255))
                     stmt.setString(4, by?.toString())
                     stmt.setLong(5, System.currentTimeMillis())
                     stmt.executeUpdate()
@@ -66,7 +64,7 @@ class BanManager(private val plugin: BetterAncientCities) {
             cache.getOrPut(cityId) { ConcurrentHashMap.newKeySet() }.add(player)
             true
         } catch (e: Exception) {
-            plugin.logger.warning("[Bans] ban failed (city $cityId / $player): ${e.message}")
+            plugin.logger.warning("Could not save a loot ban for city #$cityId: ${e.message}")
             false
         }
     }
@@ -83,12 +81,12 @@ class BanManager(private val plugin: BetterAncientCities) {
                 }
             }
         } catch (e: Exception) {
-            plugin.logger.warning("[Bans] unban failed (city $cityId / $player): ${e.message}")
+            plugin.logger.warning("Could not lift a loot ban for city #$cityId: ${e.message}")
             false
         }
     }
 
-    /** Full ban records for a city (for listing in the GUI / command). */
+    /** Full ban records for a city, newest first. */
     suspend fun listBans(cityId: Int): List<BanRecord> = withContext(Dispatchers.IO) {
         val out = mutableListOf<BanRecord>()
         try {
@@ -113,7 +111,7 @@ class BanManager(private val plugin: BetterAncientCities) {
                 }
             }
         } catch (e: Exception) {
-            plugin.logger.warning("[Bans] listBans($cityId) failed: ${e.message}")
+            plugin.logger.warning("Could not list the loot bans of city #$cityId: ${e.message}")
         }
         out
     }
