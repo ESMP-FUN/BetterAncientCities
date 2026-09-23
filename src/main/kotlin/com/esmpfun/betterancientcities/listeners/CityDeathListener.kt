@@ -6,7 +6,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 
-/** Counts player deaths that occur inside an approved Ancient City. */
+/** Counts player deaths inside an approved Ancient City. */
 class CityDeathListener(private val plugin: BetterAncientCities) : Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

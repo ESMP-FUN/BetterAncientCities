@@ -1,39 +1,55 @@
 # How It Works
 
-A short tour of the mechanics, so the settings in `config.yml` make sense.
+A short tour of what the plugin does, so the settings in `config.yml` make sense.
 
-## Discovery
+## Finding cities
 
-When a chunk loads, BetterAncientCities asks the server whether an Ancient City structure overlaps it (using the game's own generated-structure data). If so, it registers the city with **exact bounds** — the union of the structure's individual pieces — and records each piece's bounding box. There's no block-scanning or guesswork.
+When part of the world loads, the plugin asks Minecraft whether an Ancient City is there. If so, it saves the city along with the exact outline of each of its buildings. There is no guessing from block types.
 
-Because it uses the real structure data, the plugin knows precisely which chests belong to the city versus a chest a player placed nearby.
+Because it knows the buildings exactly, the plugin can tell a city chest from a chest a player placed nearby.
 
-## Per-player loot
+If you delete a city, it is found again the next time players go near it, unless its world is in `discovery.excluded-worlds`.
 
-City containers are never modified. The first time anyone opens one, the plugin rolls its loot table once and stores that as a shared **template**. Every player then gets their own private **copy** cloned from the template — so each player loots the full chest, independently.
+## Per-player chests
 
-Operators holding `bac.admin` can **sneak-open** a container to edit the shared template; normal players always get their own copy.
+The real chests in the city are never changed. The first time anyone opens one, the plugin rolls Minecraft's loot for it once and keeps that as the chest's **loot for everyone**. Each player then gets their own **copy** of it, so every player loots the full chest.
 
-## The refresh cycle
+Staff with `bac.admin` can **sneak and open** a chest to change the loot for everyone. Players who have already opened that chest keep what they had until the next refresh.
 
-Loot freshness is per-city and lazy — there's no scheduler ticking on every city:
+Chests, trapped chests, barrels, dispensers and droppers inside the city's buildings all work this way. Hoppers can't take items out of them.
 
-1. The first player to loot a city with no active cycle starts a refresh window (`loot.refresh-hours`, default 12).
-2. During the window, everyone still gets their own private copy.
-3. When the window elapses, the next player to loot triggers a refresh — all copies are cleared — and a new window begins.
+## Loot refresh
 
-Because each city's timer starts when *it* is first looted, cities refresh staggered across time rather than all at once.
+Each city has its own clock:
+
+1. The first player to loot a city starts its clock (`loot.refresh-hours`, 12 by default).
+2. Until the clock runs out, every player keeps their own copies.
+3. After that, the next player to open a chest in the city refreshes it: everyone's copies are cleared and the clock starts again.
+
+Because each clock starts when that city is first looted, cities refresh at different times instead of all at once.
+
+{% hint style="warning" %}
+Anything a player leaves in a city chest is gone after a refresh. City chests are not storage.
+{% endhint %}
 
 ## Protection
 
-Protection is **bounds-based per structure piece**, not material-based. Ancient cities are built largely from plain deepslate and basalt, so a material allow-list would leave most of the structure exposed. Instead, any block inside a structure piece (expanded by a small `protection.piece-padding`) is protected, regardless of type — while the natural deep-dark terrain *between* the scattered ruins stays fully mineable.
+Protection goes by position, not by block type. Ancient Cities are mostly plain deepslate, so a list of protected blocks would miss most of the city. Instead, every block inside a city building, and within `protection.piece-padding` blocks of one, is protected whatever it is made of. The natural rock **between** the buildings can still be mined.
 
-Operators bypass protection by default (`bac.bypass.protection`). Use `/ancient check` while looking at a block to see whether it's protected and why.
+Inside the protected area, players can't break or place blocks or pour buckets, fire can't burn or spread, pistons can't move blocks, mobs can't change blocks, and explosions leave the buildings alone.
+
+Operators can still build, because they have `bac.bypass.protection`. Look at a block and type `/ancient check` to see whether it is protected and why.
 
 ## Snapshots
 
-A snapshot captures the block data of every cell inside the city's structure pieces (a true reset point, including air, so restoring removes sculk that has spread). Restoring rewrites those blocks back to the captured state.
+A snapshot saves every block of the city's buildings, including the empty space inside them. Restoring it puts all of those blocks back, which also removes sculk that has spread since.
 
-* A **baseline snapshot is captured on approval** (`snapshot.auto-capture-on-approve`).
-* You can re-capture or restore any time via the GUI or `/ancient snapshot` / `/ancient reset`.
-* Optionally, the city can **auto-restore when its loot cycle refreshes** (`snapshot.auto-reset-on-refresh`, off by default).
+* A snapshot is saved **when you approve a city** (`snapshot.auto-capture-on-approve`).
+* Save or restore one any time with `/ancient snapshot` and `/ancient reset`, or from the menu.
+* The city can also be **put back every time its loot refreshes** (`snapshot.auto-reset-on-refresh`, off by default).
+
+Saving and restoring work through the city a chunk at a time, so even a big city does not freeze the server. It takes a few seconds.
+
+{% hint style="warning" %}
+A player standing where blocks are put back can end up inside them. Restore a city when nobody is exploring it, or warn players first.
+{% endhint %}

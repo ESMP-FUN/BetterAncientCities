@@ -5,23 +5,20 @@ import com.esmpfun.betterancientcities.gui.framework.BaseHolder
 import com.esmpfun.betterancientcities.gui.framework.VcGui
 import com.esmpfun.betterancientcities.gui.framework.VcGuiItem
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 
-/**
- * Top-level admin view: a paginated list of discovered Ancient Cities. Approved
- * cities show as a green icon, pending ones as amber. Click a city to open its
- * detail hub.
- */
+/** The first menu screen: every city found, green when active and orange while pending. */
 class CityListView(
     private val plugin: BetterAncientCities,
     private val menu: MenuService,
     private val page: Int = 0,
-) : VcGui(6, Component.text("§5Ancient Cities"), Holder(), "bac.admin") {
+) : VcGui(6, Component.text("Ancient Cities", NamedTextColor.DARK_PURPLE), Holder(), "bac.admin") {
 
     class Holder : BaseHolder()
 
     private companion object {
-        const val PER_PAGE = 45 // slots 0..44; bottom row reserved for nav
+        const val PER_PAGE = 45
     }
 
     init { layout() }
@@ -34,8 +31,8 @@ class CityListView(
         val slice = cities.drop(p * PER_PAGE).take(PER_PAGE)
 
         if (cities.isEmpty()) {
-            set(22, guiItem(Material.BARRIER, "<red>No Ancient Cities discovered yet",
-                listOf("<gray>Explore the Deep Dark — cities register", "<gray>automatically as their chunks load.")))
+            set(22, guiItem(Material.BARRIER, "<red>No Ancient Cities found yet",
+                listOf("<gray>Cities are found by themselves when", "<gray>players explore near them.")))
         }
 
         slice.forEachIndexed { i, city ->
@@ -48,7 +45,7 @@ class CityListView(
                 listOf(
                     "<gray>World: <white>${city.world}",
                     "<gray>Center: <white>${(r.minX + r.maxX) / 2}, ${(r.minY + r.maxY) / 2}, ${(r.minZ + r.maxZ) / 2}",
-                    "<gray>Pieces: <white>${city.pieces.size}",
+                    "<gray>Buildings: <white>${city.pieces.size}",
                     "<gray>Status: $status",
                     "",
                     "<yellow>Click to manage",
@@ -56,13 +53,12 @@ class CityListView(
             ) { ctx -> menu.openCityDetail(ctx.player, city) })
         }
 
-        // Nav row.
-        if (p > 0) set(48, guiItem(Material.ARROW, "<white>◀ Previous") { ctx ->
+        if (p > 0) set(48, guiItem(Material.ARROW, "<white>« Previous page") { ctx ->
             CityListView(plugin, menu, p - 1).open(ctx.player)
         })
         set(49, guiItem(Material.BOOK, "<gray>Page <white>${p + 1}<gray>/<white>$pages",
             listOf("<gray>${cities.size} cities total")))
-        if (p < pages - 1) set(50, guiItem(Material.ARROW, "<white>Next ▶") { ctx ->
+        if (p < pages - 1) set(50, guiItem(Material.ARROW, "<white>Next page »") { ctx ->
             CityListView(plugin, menu, p + 1).open(ctx.player)
         })
         set(53, guiItem(Material.BARRIER, "<red>Close") { ctx -> ctx.player.closeInventory() })

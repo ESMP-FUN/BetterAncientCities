@@ -1,6 +1,7 @@
 package com.esmpfun.betterancientcities.gui
 
 import com.esmpfun.betterancientcities.BetterAncientCities
+import com.esmpfun.betterancientcities.managers.SnapshotManager
 import com.esmpfun.betterancientcities.models.City
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
@@ -9,83 +10,76 @@ import org.bukkit.entity.Player
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Central opener for BetterAncientCities's admin GUI. Views are built fresh on each
- * open; data that requires the DB (stats, bans) is fetched on the IO dispatcher
- * and the view is opened back on the player's region thread (Folia-safe) — never
- * `runBlocking` on the region thread.
+ * Opens the menu screens. Screens that need the database load it in the
+ * background first, then open on the player's own thread.
  */
 class MenuService(private val plugin: BetterAncientCities) {
 
-    /** Top level: the list of discovered cities (approved + pending). In-memory cache, no DB. */
+    private val mm = MiniMessage.miniMessage()
+
     fun openCityList(player: Player) {
         CityListView(plugin, this).open(player)
     }
 
-    /** A single city's admin hub. */
     fun openCityDetail(player: Player, city: City) {
         CityDetailView(plugin, this, city).open(player)
     }
 
     /**
-     * Approve a pending city with immediate feedback. Shared by the chat
-     * `[approve]` link / `/ancient approve` and the GUI button.
-     *
-     * Guards against duplicate runs (the slow baseline-snapshot capture meant a
-     * spammed [approve] link fired many times), sends an instant chat line, and —
-     * for an in-game player — animates a busy indicator on the action bar while
-     * the snapshot is captured, finishing with a result line.
+     * Approves a pending city and saves its first snapshot. Shared by the chat
+     * [approve] link, `/ancient approve` and the menu button; a second click while
+     * it runs is ignored.
      */
     fun beginApproval(sender: CommandSender, city: City, reopenDetail: Boolean) {
-        if (city.approved) { sender.sendMessage("§7City #${city.id} is already active."); return }
+        if (city.approved) { sender.sendMessage(mm.deserialize("<gray>City #${city.id} is already active.")); return }
         if (!plugin.cityManager.tryBeginApproval(city.id)) {
-            sender.sendMessage("§7Already approving city #${city.id}… one moment.")
+            sender.sendMessage(mm.deserialize("<gray>City #${city.id} is already being approved. One moment."))
             return
         }
-        sender.sendMessage("§e⏳ Approving city #${city.id} — capturing baseline snapshot, this can take a few seconds…")
+        sender.sendMessage(mm.deserialize("<yellow>Approving city #${city.id} and saving its snapshot. This can take a few seconds."))
         val player = sender as? Player
         val busy = player?.let { startBusyActionBar(it, "Approving city #${city.id}") }
 
         plugin.launchAsync {
+            var ok = false
+            var cells = -1
             try {
-                val ok = plugin.cityManager.approveCity(city.id)
-                var cells = -1
+                ok = plugin.cityManager.approveCity(city.id)
                 if (ok && plugin.config.getBoolean("snapshot.auto-capture-on-approve", true)) {
                     plugin.cityManager.byId(city.id)?.let { cells = plugin.snapshotManager.capture(it) }
                 }
-                busy?.cancel()
-                if (player != null) plugin.scheduler.runAtEntity(player, Runnable {
-                    player.sendActionBar(Component.empty())
-                    if (ok && reopenDetail && player.isOnline) {
-                        plugin.cityManager.byId(city.id)?.let { openCityDetail(player, it) }
-                    }
-                })
-                sender.sendMessage(
-                    if (ok) "§a✓ Approved city #${city.id}${if (cells >= 0) " §7(baseline snapshot: $cells cells)" else ""}."
-                    else "§cApproval failed."
-                )
             } finally {
+                busy?.cancel()
                 plugin.cityManager.endApproval(city.id)
             }
+            if (player != null) plugin.scheduler.runAtEntity(player, Runnable {
+                player.sendActionBar(Component.empty())
+                if (ok && reopenDetail && player.isOnline) {
+                    plugin.cityManager.byId(city.id)?.let { openCityDetail(player, it) }
+                }
+            })
+            sender.sendMessage(mm.deserialize(when {
+                !ok -> "<red>City #${city.id} could not be approved. The server console says why."
+                cells >= 0 -> "<green>City #${city.id} is now active. <gray>(snapshot saved, $cells blocks)"
+                cells == SnapshotManager.BUSY -> "<green>City #${city.id} is now active. <gray>(a snapshot was already being saved)"
+                plugin.config.getBoolean("snapshot.auto-capture-on-approve", true) ->
+                    "<green>City #${city.id} is now active. <yellow>Its snapshot could not be saved, see the console."
+                else -> "<green>City #${city.id} is now active."
+            }))
         }
     }
 
-    /** Cycling-dots busy indicator on the player's action bar; cancel the returned task to stop. */
     private fun startBusyActionBar(player: Player, label: String) =
         plugin.scheduler.runTaskTimer(object : Runnable {
             private val frames = listOf("", " .", " ..", " ...")
             private val i = AtomicInteger(0)
             override fun run() {
                 if (player.isOnline) {
-                    val dots = frames[i.getAndIncrement() % frames.size]
-                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<yellow>$label<gray>$dots"))
+                    player.sendActionBar(mm.deserialize("<yellow>$label<gray>${frames[i.getAndIncrement() % frames.size]}"))
                 }
             }
         }, 0L, 8L)
 
-    /**
-     * The per-city player grid (heads + stat tooltips + quick actions). Stats are
-     * read async, then the view opens on the player's region thread.
-     */
     fun openPlayerList(player: Player, city: City) {
         plugin.launchAsync {
             val stats = plugin.statsManager.listForCity(city.id)
@@ -96,7 +90,6 @@ class MenuService(private val plugin: BetterAncientCities) {
         }
     }
 
-    /** Per-city container browser (templates fetched async). */
     fun openContainerList(player: Player, city: City) {
         plugin.launchAsync {
             val templates = plugin.containerLootManager.listTemplates(city.id)
@@ -106,13 +99,11 @@ class MenuService(private val plugin: BetterAncientCities) {
         }
     }
 
-    /** A specific player's looted-container copies in a city (fetched async),
-     *  paired with the original templates so the contents view can diff them. */
+    /** One player's chests in a city, next to the original loot so the screen can compare them. */
     fun openPlayerContainers(player: Player, city: City, target: java.util.UUID) {
         plugin.launchAsync {
             val copies = plugin.containerLootManager.listPlayerCopies(city.id, target)
-            val templates = plugin.containerLootManager.listTemplates(city.id)
-                .associate { it.pos to it.contents }
+            val templates = plugin.containerLootManager.listTemplates(city.id).associate { it.pos to it.contents }
             plugin.scheduler.runAtEntity(player, Runnable {
                 if (player.isOnline) PlayerContainersView(plugin, this@MenuService, city, target, copies, templates).open(player)
             })

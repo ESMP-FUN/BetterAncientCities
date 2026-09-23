@@ -1,93 +1,115 @@
-# BetterAncientCities configuration
+# Better Ancient Cities settings.
+# After changing something here, type /ancient reload (or restart the server).
 
 database:
-  # 'sqlite' (default, zero-setup) or 'mysql'
+  # Where the plugin keeps its data.
+  #   sqlite - a single file in this folder. Nothing to install. Right for almost
+  #            every server, and the default.
+  #   mysql  - your own MySQL or MariaDB server, using the settings below. Only
+  #            worth it if you already run one.
+  # Everything needed for both is built in. Changing this needs a restart.
   type: sqlite
-  # MySQL settings (ignored when type: sqlite)
+  # Only used when type is mysql.
   mysql:
     host: localhost
     port: 3306
     database: ancientcitypro
     username: root
     password: ""
+    # How many connections to keep open at once. 10 is plenty.
+    pool-size: 10
 
 discovery:
-  # Auto-register naturally-generated Ancient Cities as they load.
+  # Find Ancient Cities by themselves when players explore near them.
+  # Turn off if you only want the cities that were found already.
   enabled: true
-  # Clamp the registered region's vertical bounds to the structure's own
-  # Y-extent (recommended). When false, uses the raw structure bounding box.
+  # Keep each city's area to the height of its buildings (recommended).
+  # When false, the area reaches as high and low as Minecraft's own outline
+  # of the city, which can take in more of the rock around it.
   clamp-to-structure-y: true
-  # Run a sweep over already-loaded chunks on plugin enable so cities resident
-  # at startup are caught without waiting for a ChunkLoadEvent.
+  # When the server starts, also check the areas that are already loaded,
+  # instead of waiting for a player to walk there.
   startup-sweep: true
-  # When true, a newly-discovered city is registered as PENDING — its loot and
-  # protection stay inactive until an operator approves it (/ancient approve <id> or
-  # the GUI). Recommended while validating discovery; set false to make every
-  # discovered city active immediately.
+  # When true, a new city starts out as "pending": it is saved, but loot and
+  # protection stay off until staff approve it with /ancient approve <number>
+  # or the Approve button in /ancient menu.
+  # When false, every new city is active straight away.
   require-approval: true
-  # Worlds where ACP never registers cities (case-insensitive world names).
-  # Useful when a second overworld-type world has Ancient Cities you want to
-  # leave vanilla. Cities already registered in a world BEFORE it was excluded
-  # keep working — remove them with /ancient delete <id>.
+  # Worlds where cities are never registered (names are not case-sensitive).
+  # Handy for a second overworld whose cities should stay vanilla. Cities found
+  # before a world was added here keep working; remove them with /ancient delete.
   # Example:
   #   excluded-worlds:
   #     - second_overworld
   excluded-worlds: []
 
 loot:
-  # Per-player container loot (Lootr-style). Each player gets their own private
-  # copy of a city container's contents; copies refresh on city reset. Only
-  # containers inside the actual generated structure are treated as city loot —
-  # player-placed chests keep vanilla behaviour.
+  # Every player gets their own copy of each city chest, so the second player to
+  # arrive still finds full chests. Player-placed chests are not affected.
   enabled: true
-  # Per-city loot refresh window, in hours. The first player to loot a city with
-  # no active (or an expired) cycle starts a fresh 'refresh-hours' window for THAT
-  # city; during it, every player still gets their own private copy. When it
-  # elapses, the next looter triggers a refresh (all copies cleared) and a new
-  # window begins. Per-city + lazy, so cities never all refresh at once. 0 = never
-  # refresh (per-player copies persist indefinitely).
+  # How many hours before a city's chests fill up again for everyone.
+  # The clock starts when the first player loots the city. When it runs out,
+  # the next player to open a chest there refreshes the whole city and the
+  # clock starts again. Each city has its own clock.
+  # Anything a player left in a chest is gone after a refresh.
+  # Example: 12 = twice a day. 0 = never refresh.
   refresh-hours: 12
 
 protection:
-  # Griefing protection, bounds-based per structure piece. Any block inside a
-  # generated structure piece (the actual buildings/corridors/ruins) is protected
-  # regardless of type — because ancient cities are built mostly from plain
-  # deepslate and basalt. Natural terrain BETWEEN the scattered pieces (the bulk
-  # of the 220x220 area) stays fully mineable.
+  # Protect the city's buildings from griefing. Any block that is part of a city
+  # building (or close to one, see piece-padding) is protected, whatever it is
+  # made of. The natural rock between the buildings can still be mined.
+  # Protected: breaking, placing (see block-place), buckets, fire, pistons,
+  # mobs changing blocks and explosions (see block-explosions).
   enabled: true
-  # Blocks to expand each structure piece by, covering edge decoration and a thin
-  # shell around each building. Small (~3) — this is per-piece, not whole-area.
+  # How many blocks around each building are protected too. This covers the
+  # decoration Minecraft places just outside a building's edges.
+  # Example: 3 protects 3 blocks out from every wall, floor and roof.
   piece-padding: 3
-  # Deny placing blocks inside a protected structure piece.
+  # Stop players placing blocks or pouring buckets inside the protected area.
   block-place: true
-  # Protect structure blocks from creeper/TNT/other explosions.
+  # Stop creepers, TNT and other explosions breaking the protected area.
   block-explosions: true
-  # Show an action-bar message when a break/place is denied.
+  # Show "This Ancient City is protected." above the hotbar when something is stopped.
   notify-denied: true
 
-# Anonymous usage metrics (FastStats). No player data is collected — just
-# aggregate config/feature usage that guides development priorities.
-# Server-wide opt-out also available in plugins/faststats/config.properties.
-metrics:
-  enabled: true
-  # Opt-in error reporting. Sends stack traces from this plugin when
-  # something goes wrong, which helps fix bugs nobody reports — but unlike
-  # the aggregate metrics above, a stack trace can include file paths and
-  # other plugins' internals. Off unless you turn it on. Requires
-  # 'enabled: true' above.
-  error-reporting: false
-
 snapshot:
-  # Hard cap on how many block-cells a single city snapshot may capture, to
-  # protect memory on pathological structures. ~3M is far above a real city.
+  # A snapshot saves a city's blocks so they can be put back later, undoing
+  # griefing and sculk spread.
+  # The largest city, in blocks, that may be saved. The default is far above a
+  # real Ancient City and only guards against a broken one using up memory.
   max-cells: 3000000
-  # Capture a baseline snapshot automatically when a city is approved, so a
-  # reset target always exists without a manual /ancient snapshot.
+  # Save a snapshot automatically when a city is approved.
   auto-capture-on-approve: true
-  # When a city's loot refresh cycle rolls over, also restore its blocks from the
-  # snapshot (reverts sculk spread + griefing). OFF by default: a restore rewrites
-  # blocks and can be disruptive if players are inside. Requires a snapshot.
+  # Also put the city's blocks back each time its loot refreshes.
+  # Off by default: players standing where blocks come back can end up inside
+  # them. Needs a snapshot.
   auto-reset-on-refresh: false
 
-debug:
-  verbose-logging: false
+update:
+  # What the update checker may do:
+  #   off        - never check
+  #   check-only - check quietly; see the result with /ancient update status
+  #   notify     - also tell staff in chat and the console when an update is out,
+  #                with a button (or /ancient update download) to fetch it.
+  #                It installs on the next restart. This is the default.
+  #   auto-stage - fetch new versions by itself, ready for the next restart
+  # It always picks the download made for your Minecraft version.
+  # Changes to this section need a restart.
+  mode: notify
+  # Hours between checks (at least 1).
+  check-interval-hours: 6
+  # Only install a download that comes with a checksum to verify it.
+  # Leave this on.
+  require-hash: true
+
+# Anonymous usage statistics (FastStats). No player data: only things like the
+# database type, the discovery settings and how many cities a server has.
+# You can also turn them off for every plugin in plugins/faststats/config.properties.
+# Changes to this section need a restart.
+metrics:
+  enabled: true
+  # Send an error report when something goes wrong in this plugin, so it can be
+  # fixed without anyone reporting it. Off unless you turn it on, because an
+  # error report can include folder names. Needs 'enabled: true' above.
+  error-reporting: false

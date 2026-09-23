@@ -1,7 +1,8 @@
 plugins {
     kotlin("jvm") version "2.3.21"
     id("com.gradleup.shadow") version "9.0.0"
-    id("xyz.jpenilla.run-paper") version "2.3.1"
+    // 3.x uses Paper's current downloads API; 2.3.1 used the retired v2 API.
+    id("xyz.jpenilla.run-paper") version "3.0.2"
 }
 
 group = "com.esmpfun"
@@ -19,33 +20,29 @@ repositories {
 }
 
 dependencies {
-    // Paper API. Ancient City discovery uses World.getStructures(...) /
-    // GeneratedStructure / StructurePiece (Structure.ANCIENT_CITY), all present
-    // in 1.21.1. api-version stays '1.21'.
+    // Paper API 1.21.1, the oldest version this build supports (api-version '1.21').
+    // The -mc26 and -mc263 builds live on their own branches.
     compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
-    // Database (SQLite default, MySQL optional — both via HikariCP).
+    // Database: SQLite by default, MySQL optional, both through HikariCP.
     implementation("org.xerial:sqlite-jdbc:3.44.1.0")
-    // HikariCP needs slf4j-api at compile time, but Paper ships slf4j at
-    // runtime — exclude it so we don't shade a duplicate.
+    // Paper ships slf4j, so HikariCP's copy is left out.
     implementation("com.zaxxer:HikariCP:5.1.0") {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
-    // MySQL classic-protocol JDBC driver. protobuf-java is only used by the X
-    // DevAPI (jdbc:mysqlx) which we never touch — excluding it drops ~1.7 MB.
+    // protobuf-java is only for the X DevAPI (jdbc:mysqlx), which is never used. Saves ~1.7 MB.
     implementation("com.mysql:mysql-connector-j:8.4.0") {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }
 
-    // PluginPulse — update checking + verified install staging.
-    implementation("com.github.darkstarworks.PluginPulse:pluginpulse-core:v0.8.0")
+    // PluginPulse: update checks and checksum-verified downloads.
+    implementation("com.github.ESMP-FUN.PluginPulse:pluginpulse-core:v0.9.0")
 
-    // Anonymous usage metrics (relocated below to avoid clashing with other
-    // plugins shading a different SDK version)
+    // Anonymous usage statistics, relocated below so other plugins' copies cannot clash.
     implementation("dev.faststats.metrics:bukkit:0.28.0")
 
     // Testing
@@ -69,42 +66,34 @@ kotlin {
 tasks {
     shadowJar {
         archiveClassifier.set("")
-        // Do NOT relocate Kotlin stdlib / kotlinx-coroutines (Bukkit must find them).
-        // Do NOT relocate org.sqlite or com.mysql (JDBC drivers load by class name
-        // + ServiceLoader; relocation would break driverClassName / META-INF/services).
+        // Kotlin, coroutines, org.sqlite and com.mysql stay where they are: the JDBC
+        // drivers are loaded by class name and ServiceLoader.
         relocate("com.zaxxer.hikari", "io.github.darkstarworks.acp.hikari")
         relocate("io.github.darkstarworks.pluginpulse", "io.github.darkstarworks.acp.pluginpulse")
         relocate("dev.faststats", "io.github.darkstarworks.acp.faststats")
 
-        // Paper's plugin remapper rejects a jar containing duplicate entries.
-        // Concatenate the JDBC ServiceLoader registrations (sqlite-jdbc and
-        // mysql-connector-j each ship META-INF/services/java.sql.Driver) —
-        // deduping instead of merging would drop one of the two drivers.
+        // Paper refuses a jar with duplicate entries. Both drivers register in
+        // META-INF/services/java.sql.Driver, so the files are merged, not deduplicated.
         mergeServiceFiles()
-        // The faststats bukkit/config/core modules each ship an identical
-        // META-INF/faststats.properties (version=0.28.0); keep the first.
-        // Scoped to that path only — a task-wide strategy would override
-        // mergeServiceFiles() above and silently drop the MySQL driver.
+        // Each FastStats module ships the same faststats.properties; keep one. Scoped to
+        // this path, because a task-wide strategy would override mergeServiceFiles().
         filesMatching("META-INF/faststats.properties") {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
 
-        // Strip signature files from the (signed) MySQL connector jar — shading a
-        // signed jar without this throws "Invalid signature file digest" at load.
+        // The MySQL connector is signed; its signature files must go or the jar will not load.
         exclude("META-INF/*.SF")
         exclude("META-INF/*.DSA")
         exclude("META-INF/*.RSA")
 
-        // slf4j-api is pulled transitively by sqlite-jdbc, but Paper ships it at
-        // runtime — don't shade a duplicate.
+        // sqlite-jdbc pulls in slf4j-api too; Paper already has it.
         exclude("org/slf4j/**")
 
-        // Keep only the SQLite natives real servers/dev use: Windows x86_64 (dev),
-        // Linux x86_64 (most servers), Linux aarch64 (ARM servers). Drop the rest.
+        // Keep only the SQLite natives servers run on: Linux x86_64, Linux aarch64 and
+        // Windows x86_64. A host on anything else fails to start with "No native library".
         listOf(
             "Linux/arm", "Linux/armv6", "Linux/armv7", "Linux/ppc64", "Linux/x86",
             "Windows/aarch64", "Windows/armv7", "Windows/x86",
-            // Defensive: other layouts shipped by some sqlite-jdbc versions.
             "Mac", "FreeBSD", "Linux-Android", "Linux-Musl",
         ).forEach { exclude("org/sqlite/native/$it/**") }
     }
@@ -123,6 +112,8 @@ tasks {
 
     test {
         useJUnitPlatform()
+        // MockK attaches an agent to the test JVM, which JDK 24 and newer refuse unless asked.
+        jvmArgs("-XX:+EnableDynamicAgentLoading", "-Djdk.attach.allowAttachSelf=true")
     }
 }
 

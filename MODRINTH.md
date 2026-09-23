@@ -1,198 +1,158 @@
 <div align="center">
 
-# BetterAncientCities
+# Better Ancient Cities
 
-### Renewable Ancient Cities for Multiplayer <br>
-Auto-discovery, Per-player loot, Griefing-protected, Fully restorable.
+Free forever.<br>
+
+[![Discord](https://img.shields.io/badge/join_%E2%86%92_-_Discord-gray?style=flat&logo=discord&logoSize=amd)](https://discord.gg/qwYcTpHsNC)
+[![Ko-Fi](https://img.shields.io/badge/support_%E2%86%92_-_KoFi-gray?style=flat&logo=kofi&logoSize=amd)](https://ko-fi.com/darkstarworks)
+
+Turn one-time Ancient Cities into loot runs every player gets to enjoy.
 
 <br>
 
-**Got an "if it did [THING], I'd use it" idea? Tell me!** [<img src="https://raw.githubusercontent.com/darkstarworks/TrialChamberPro/master/dc.png" width="20" alt="Join Discord Server">](https://discord.gg/qwYcTpHsNC) <br>
-
-Donating is Free! (for me): [ [Ko-Fi](https://ko-fi.com/darkstarworks) ]
+| **Vanilla** | **With this plugin** |
+|---------|------------------|
+| First player empties every chest | Every player gets their own chests |
+| Chests stay empty forever | Loot comes back on a timer |
+| The city gets dug out and burned | Protected |
+| Sculk spreads over everything | Put the city back as it was, in one click |
+| Set up each city by hand | Found automatically |
 
 </div>
 
 <br>
 
-> **Standalone** <br>
-> BetterAncientCities does **not** require TrialChamberPro or any (of my) other plugin(s). <br>
-> Run them side by side if you like; they don't interfere.
+### Setup
+
+1. Drop the jar in `/plugins`
+2. Start the server
+3. Explore. When an Ancient City is found, staff get a message in chat:
+
+<img width="520" height="40" alt="The chat message shown when a city is found" src="https://github.com/user-attachments/assets/d7334c3b-a621-451b-91b9-24c0387b8fbc" />
+
+4. Click the green coordinates to go there and take a look
+5. Click **[approve]**
+
+That's the whole setup.
+
+> **Why approve first?** The plugin finds cities from Minecraft's own structure data, so mistakes are rare. Approving lets you check before loot and protection switch on. Turn it off with `discovery.require-approval: false`.
 
 <br>
 
-**Full documentation:** https://esmp-fun.gitbook.io/plugins/better-ancient-cities
+### What it does
+
+**Loot**
+- Every player gets their own copy of each city chest
+- The second player to arrive still finds full chests
+- Each city refills on its own timer (12 hours by default), starting when someone first loots it
+- Staff can change what's in a chest for everyone: sneak and open it
+- Chests players place themselves stay normal
+
+**Protection**
+- Nobody breaks, places, pours, burns, pushes or blows up the city's buildings
+- The rock between the buildings can still be mined
+- Ban a player from looting one city. They can still walk through it
+
+**Snapshots**
+- Save a city's blocks, put them back later
+- Undoes griefing and sculk spread
+- Saved by itself when you approve a city
+- Optional: put the city back every time its loot refreshes
+
+**Staff menu**
+- `/ancient menu` covers everything
+- See what each player took from each chest, compared with the original loot
+- Chests looted, time spent, deaths and blocked griefing, per player, per city
+- Who is in a city right now
+
+**Under the hood**
+- Paper, Purpur and Folia
+- Big cities are saved and restored a chunk at a time, so the server keeps running smoothly
+- SQLite or MySQL
+- Config updates itself, keeping your settings
 
 <br>
 
-## Why BetterAncientCities?
-
-| Problem | Solution |
-|---------|----------|
-| First player takes all the loot | Per-player chest copies — everyone loots the full city, independently |
-| Looted chests stay empty forever | Per-city refresh cycle — the city's loot comes back on a timer |
-| Griefers hollow out the structure | Bounds-based griefing protection for the whole structure |
-| Sculk spreads / city gets damaged | Snapshot + restore returns it to pristine on demand |
-| No way to reset a 220-block ruin | One-click reset (or auto-restore on the refresh cycle) |
-| Setup overhead per city | Auto-discovery — cities register themselves from the game's own structure data |
-
-<br>
-
-## Plug-and-Play Setup
-
-Drop the jar in `plugins/`, (re)start your server and when an Ancient City is detected, <br>
-BetterAncientCities saves it to your server and announces its find to operators. <br>
-Confirm it right from the chat or later in the GUI to activate per-player loot, refresh and protection.
-
-<br>
-
-```yaml
-# plugins/BetterAncientCities/config.yml  -  default configuration
-discovery:
-  enabled: true            # find Ancient Cities automatically
-  require-approval: true   # new cities wait for your OK before going live
-```
-
-> **Why is approval on by default?** 
-> Auto-discovery uses the server's real structure data, so false positives are rare, but not impossible. <br>
-
-<br>
-
-I recommend you simply follow these steps: 
-1. As you see this message:
-<img width="520" height="40" alt="image" src="https://github.com/user-attachments/assets/d7334c3b-a621-451b-91b9-24c0387b8fbc" />
-
-2. You click the [coordinates] to teleport there 
-3. Quickly inspect the area to verify the dimensions are correct
-4. Click [approve]
-
-That's all of the required setup. Sorry if you hoped for more.
-
-<br>
-
-## Features
-
-### Core Systems
-
-- **Auto-Discovery** — cities register themselves on chunk load (plus a startup sweep), using the game's generated-structure data for exact bounds and precise chest provenance. (No WorldEdit, no commands per city.)
-- **Per-Player Chest Loot** — Lootr-style private copies of every container, so the second player in, never finds gutted chests.
-- **Per-City Refresh Cycle** — the first player to loot a city starts its refresh window; when it elapses, that city's loot is fresh again. 
-> Each city runs its own timer, so they never all refresh at once (and a 50-city world doesn't reset everything simultaneously).
-- **Griefing Protection** — the structures and a small margin around them are protected from breaking, placing, and explosions, while the natural Deep-Dark terrain *between* the ruins stays fully mineable.
-- **Snapshots** — capture a city's structure and restore it on demand; reverts griefing and sculk spread to a pristine state. A baseline is captured automatically after an auto-discovery gets approved.
-- **Admin GUI** — `/ancient menu` has everything. No YAML editing required. I'm not even sure why I included commands!
-<br>
-<details>
-
-<summary><strong>Per-player stats, bans & the loot-diff view</strong></summary>
-
-- **Per-player stats** — containers looted, time spent in the city, deaths, and denied griefing attempts, tracked per player per city, plus live "who's inside now".
-- **Loot bans** — bar a specific player from looting a specific city (they can still walk through it).
-- **Loot-diff view** — click a player's head to see exactly what they took from each container: a red pane marks loot they removed (hover shows the original), a glint marks partly-taken stacks, untouched items stay plain. No need to remember what a chest originally held.
-- **Quick actions** — left-click a head to view their loot, shift-left to reset it (fresh on next open), right-click to loot-ban/unban.
-
-</details>
-<br>
-<details>
-
-<summary><strong>How the renewable model works</strong></summary>
-
-City containers are never modified. The first time anyone opens one, its loot table is rolled once into a shared **template**; every player then gets their own copy cloned from it. When a city's refresh window elapses, the next looter clears everyone's copies and a new window begins — so loot freshness is per-city, lazy (no scheduler ticking on idle cities), and naturally staggered.
-
-Operators can sneak-open a container to **edit the shared template**, changing what every player rolls.
-
-</details>
-<br>
-<details>
-
-<summary><strong>Technical</strong> — Folia-ready, async, dual database</summary>
-
-- **Paper / Folia / Purpur** — region-thread-correct block reads/writes throughout.
-- **Async architecture** — Kotlin coroutines; database and snapshot I/O never block the main thread.
-- **Dual database** — SQLite (default, zero-setup) or MySQL with connection pooling. The MySQL driver is bundled.
-- **Block-data snapshots** — capture only the structure's own cells (not the whole 220³ box), gzip-compressed to disk.
-
-</details>
-
-<br>
-
-## Requirements
-
-| Requirement | Version |
-|-------------|---------|
-| **Minecraft** | 1.21.1+ (use the `-mc26` jar for 26.x) |
-| **Server** | Paper, Folia, or Purpur |
-| **Java** | 21+ |
-
-No required dependencies.
-
-<br>
-
-## Commands & Permissions
+### Reference
 
 <details>
+<summary><strong>Commands</strong></summary>
 
-<summary><strong>Commands</strong> — everything's also in <code>/ancient menu</code></summary>
-
-| Command | Description |
+| Command | What it does |
 |---------|-------------|
-| `/ancient menu` | Open the admin GUI (the recommended way to do everything) |
-| `/ancient list` | List cities — coordinates click-to-teleport, `[menu]` opens the GUI |
-| `/ancient approve <id>` | Activate a pending city (captures a baseline snapshot) |
-| `/ancient tp <id>` · `/ancient open <id>` | Teleport to / open a city |
-| `/ancient check` | Is the block you're looking at protected? (reports independently of your bypass) |
-| `/ancient snapshot <id>` · `/ancient reset <id>` | Capture / restore a city's structure |
-| `/ancient ban\|unban\|bans <id> [player]` | Manage per-city loot bans |
-| `/ancient resetloot <id> <player>` | Let a player loot the city fresh |
+| `/ancient menu` | Everything, in a menu |
+| `/ancient list` | All cities found |
+| `/ancient approve <number>` | Switch on a pending city |
+| `/ancient tp <number>` | Go there |
+| `/ancient check` | Is the block you look at protected? |
+| `/ancient snapshot <number>` | Save the city's blocks |
+| `/ancient reset <number>` | Put them back |
+| `/ancient ban <number> <player>` | Stop a player looting a city |
+| `/ancient resetloot <number> <player>` | Let a player loot a city fresh |
 | `/ancient reload` | Reload config |
 
+[All commands](https://esmp-fun.gitbook.io/plugins/better-ancient-cities/reference/commands)
+
 </details>
 
 <details>
-
 <summary><strong>Permissions</strong></summary>
 
-| Permission | Default | Grants |
-|------------|---------|--------|
-| `bac.admin` | OP | All `/ancient` commands and the GUI |
-| `bac.discovery.notify` | OP | Notified when a city is auto-discovered |
-| `bac.bypass.protection` | OP | Break/place freely inside a city |
+| Permission | What it does | Default |
+|------------|--------------|---------|
+| `bac.admin` | Everything | OP |
+| `bac.discovery.notify` | Get told when a city is found | OP |
+| `bac.bypass.protection` | Build inside cities | OP |
 
-> **Heads up:** operators bypass protection by default. If you can still break blocks in an active city, that's why — test with a non-op account, or just use `/ancient check` to confirm protection coverage as an op.
+> Protection looks broken when you test as OP! Operators can build anywhere. Use `/ancient check`, or test with a player who is not an operator.
+
+</details>
+
+<details>
+<summary><strong>Settings people change</strong></summary>
+
+```yaml
+discovery:
+  require-approval: true   # false = new cities are active straight away
+
+loot:
+  refresh-hours: 12        # hours before chests refill. 0 = never
+
+protection:
+  piece-padding: 3         # blocks around each building that are protected too
+
+snapshot:
+  auto-reset-on-refresh: false   # true = put the blocks back when loot refreshes
+```
+
+[config.yml](https://esmp-fun.gitbook.io/plugins/better-ancient-cities/configuration/config.yml)
+
+</details>
+
+<details>
+<summary><strong>Requirements</strong></summary>
+
+- Paper, Purpur or Folia
+- Minecraft 1.21.1 or newer. Use the `-mc26` jar for 26.0 to 26.2, and the `-mc263` jar for 26.3
+- Java 21 or newer (26.x servers run on Java 25)
+- Nothing else. Works on its own
 
 </details>
 
 <br>
 
-## Support
+### Support
 
-- **Discord** — [join here](https://discord.gg/qwYcTpHsNC) for support, announcements, and feature requests.
-- **GitHub Issues** — [report bugs](https://github.com/ESMP-FUN/BetterAncientCities/issues).
-- **Source** — [github.com/ESMP-FUN/BetterAncientCities](https://github.com/ESMP-FUN/BetterAncientCities).
-
-<br>
-
-## Target Audience
-
-- **Survival & SMP servers** — renewable Deep-Dark content with fair loot for everyone.
-- **Networks** — cities reset staggered, never all at once, so resources stay smooth.
-- **Adventure / RP servers** — protected, restorable Ancient Cities as set-piece dungeons.
+- [Discord](https://discord.gg/qwYcTpHsNC) - help, news and ideas
+- [GitHub Issues](https://github.com/ESMP-FUN/BetterAncientCities/issues) - bug reports
+- [Documentation](https://esmp-fun.gitbook.io/plugins/better-ancient-cities)
 
 ---
 
 <div align="center">
 
-**Paper 1.21.1+ / 26.x** · **Folia-ready** · **Java 21+**
-
-Made with Kotlin by [darkstarworks](https://github.com/darkstarworks)
-
----
-
-Questions, or just want to say Hi? [Join the Discord.](https://discord.gg/qwYcTpHsNC)
-
-Did you know I have other plugins? Check them out on Modrinth [ [here](https://modrinth.com/organization/esmp) ] and [ [here](https://modrinth.com/user/darkstarworks) ] <br>
-
-Donating is free! (for me): [Ko-Fi](https://ko-fi.com/darkstarworks)
+Made with Kotlin by [darkstarworks](https://github.com/darkstarworks). More plugins: [ESMP](https://modrinth.com/organization/esmp) · [darkstarworks](https://modrinth.com/user/darkstarworks)
 
 [![Servers](https://img.shields.io/endpoint?url=https%3A%2F%2Ffaststats.dev%2Fapi%2Fshields%2Fbetter-ancient-cities%3Fmetric%3Dservers%26color%3Dblue%26icon%3D1&style=flat)](https://faststats.dev/project/better-ancient-cities)
 

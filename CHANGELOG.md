@@ -4,53 +4,93 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [Unreleased]
+### Added
+- **A separate download for Minecraft 26.3.** Servers on 26.3 should use the jar ending in `-mc263`. The `-mc26` jar is for 26.0 to 26.2, and the plain jar for 1.21.x.
+- **Protection now also stops buckets, fire, pistons and mobs.** Before, only breaking, placing and explosions were stopped, so a city could still be flooded, burned, pulled apart with pistons or changed by mobs such as endermen.
+- **Update settings in `config.yml`.** A new `update` section sets how the update checker behaves, including `mode: off`.
+- **New settings are added to your `config.yml` by themselves** when you update. Your own settings are kept, and the old file is saved as `config.yml.bak`.
+- **Deleting a city asks first.** `/ancient delete <number>` now says what will be lost and needs `confirm` at the end. In the menu, the delete button needs a shift-click.
+
+### Fixed
+- **City chests on the edge of a building now give every player their own loot.** Each building was stored one block short on its east, top and south sides. A chest standing on one of those edges was treated as an ordinary chest, so the first player took everything, and protection was a block thinner there. Cities you already have are corrected by themselves at startup.
+- **Items can no longer be duplicated out of a city chest.** Three ways were closed: opening the same chest again quickly on a busy server could hand back what was in it before you took things out; a short database hiccup could hand you the full chest again; and restarting or reloading the server while a chest was open, or just after closing it, did the same. Chests are now saved before anything else can read them, and whatever is still open is saved at shutdown.
+- **A database hiccup no longer replaces the loot staff set up for a chest.** It used to roll new loot over the edited loot.
+- **Two players opening a brand-new chest at the same moment now find the same loot.**
+- **MySQL works.** The plugin could not start on MySQL (it did on MariaDB), because of how one table was set up.
+- **Big chest contents save on MySQL.** A chest full of shulker boxes could be too large to save, so the chest went back to how it was before.
+- **Snapshots saved before 2.0 restore again.** Snapshots from the AncientCityPro days could not be read after the rename, so those cities could not be restored.
+- **Restoring a city no longer freezes the server.** A whole city was put back in a single moment, which could stall a server for seconds. It now works through the city a chunk at a time. Saving a snapshot also uses far less memory.
+- **Saving and restoring the same city at once is refused** with a message, instead of both running and mixing up the result.
+- **Opening the chest that starts a loot refresh no longer waits for the city to be restored** (with `snapshot.auto-reset-on-refresh` on). The restore now runs next to it.
+- **Teleporting to a city puts you inside it, on solid ground.** `/ancient tp` and the Teleport button dropped you above the city, inside solid deepslate. On Folia they did not work at all.
+- **Banning a player who is not online no longer freezes the server.** A name the server did not know yet was looked up with Mojang while everything waited. Names are now only looked up among players who have joined before.
+- **Time spent in a city is no longer lost on restart,** and teleporting in or out of a city now counts.
+- **The "Approving city" message above the hotbar always goes away,** even when approving fails.
+- **A city that could not be saved because the database was briefly away is found again** the next time a player goes near it, instead of after a restart.
+- **Deleting a city also deletes its snapshot,** and the city is found again when players next go near it, instead of only after a restart.
+- **Update downloads pick the right jar.** Every release carries all three downloads, and the update checker took whichever came first, which could be the one for a different Minecraft version.
+- **Stopping the server during an update check no longer prints errors.**
+- **Spectators opening a city chest no longer use up their loot** for when they play normally.
+- **`/ancient check` names the right permission** (`bac.bypass.protection`, not the old name).
+- **Hoppers next to city chests cost less.** Every hopper move on the server used to do a slow check first.
+- **Tab completion lists `open`** and only suggests what matches what you typed.
+- **When the database cannot be opened, `/ancient` says so,** instead of claiming the plugin is still starting.
+- **Long ban reasons save on MySQL.** Reasons over 255 characters are cut short instead of failing.
+
+### Changed
+- **Plainer wording** in chat, the menu, `config.yml` and the documentation.
+
+### Note
+- **Snapshots saved by this version cannot be read by older versions.** If you ever go back to an older version, save your snapshots again after downgrading.
+
 ## [2.1.0] - 2026-07-20
 ### Changed
-- **Usage metrics moved from bStats to FastStats.** Same aggregate config/feature data, still no player data. The server-wide opt-out is now `plugins/faststats/config.properties`; `metrics.enabled: false` in config.yml is unchanged. City count is now reported as a plain number rather than a pre-bucketed range.
+- **Usage metrics moved from bStats to FastStats.** The same settings and feature counts, still no player data. The server-wide opt-out is now `plugins/faststats/config.properties`; `metrics.enabled: false` in config.yml is unchanged. City count is now reported as a plain number rather than a pre-bucketed range.
 
 ### Added
-- **Opt-in error reporting.** New `metrics.error-reporting` in config.yml, **off by default**, sends stack traces from BetterAncientCities so bugs get fixed without needing a report. Kept separate from `metrics.enabled` because a stack trace can include file paths, unlike the aggregate usage metrics.
+- **Opt-in error reporting.** New `metrics.error-reporting` in config.yml, **off by default**, sends error reports from Better Ancient Cities so bugs get fixed without anyone reporting them. It is separate from `metrics.enabled` because an error report can include folder names.
 
 ## [2.0.0] - 2026-07-11
 ### Changed
-- **The plugin is now Better Ancient Cities.** Same free plugin, new name — part of the ESMP rebrand. The project now lives at https://github.com/ESMP-FUN/BetterAncientCities.
+- **The plugin is now Better Ancient Cities.** Same free plugin, new name, part of the ESMP rebrand. The project now lives at https://github.com/ESMP-FUN/BetterAncientCities.
 - Main command is `/ancient` (aliases `/bac`, legacy `/acp`, `/ancientcity`). Permissions moved from `acp.*` to `bac.*`; old grants keep working as legacy aliases.
 - Internal packages moved to `com.esmpfun.betterancientcities`.
 
 ### Added
-- Automatic data-folder migration from `plugins/AncientCityPro/` on first start (old folder kept as backup).
+- Your `plugins/AncientCityPro/` folder is copied across on first start, and the old folder is kept as a backup.
 
 ## [1.1.1] - 2026-07-10
 ### Added
-- **Anonymous usage metrics (bStats).** Aggregate config/feature usage only — no player data. Opt out via `metrics.enabled: false` in config.yml or globally in `plugins/bStats/config.yml`.
-- **World exclusion.** New `discovery.excluded-worlds` list in config.yml keeps ACP from registering Ancient Cities in named worlds — useful when a second overworld-type world has cities you want to leave vanilla. Cities registered before a world was excluded keep working; remove them with `/ancient delete <id>`.
+- **Anonymous usage metrics (bStats).** Settings and feature counts only, no player data. Opt out via `metrics.enabled: false` in config.yml or globally in `plugins/bStats/config.yml`.
+- **World exclusion.** New `discovery.excluded-worlds` list in config.yml keeps ACP from registering Ancient Cities in named worlds, handy when a second overworld has cities you want to leave vanilla. Cities registered before a world was excluded keep working; remove them with `/ancient delete <id>`.
 
 ### Changed
 - Updated the bundled PluginPulse updater to v0.8.0 (configurable source order, authenticated private-repo updates, Jenkins update source).
 
 ## [1.1.0] - 2026-07-05
 ### Added
-- **Built-in update checking.** BetterAncientCities now checks GitHub Releases for new versions and notifies admins. The new `/ancient update` command adds `check`, `download` (fetch a new build, verify its checksum, back up the current jar, and stage it in the server's update folder to install on the next restart), `restore` (roll back), and `status`. Default `notify` (announce only) — set `update.mode` to `download` or `auto-stage` in config.yml to enable installs. Powered by [PluginPulse](https://github.com/darkstarworks/PluginPulse).
+- **Built-in update checking.** BetterAncientCities now checks GitHub Releases for new versions and notifies admins. The new `/ancient update` command adds `check`, `download` (fetch a new build, verify its checksum, back up the current jar, and stage it in the server's update folder to install on the next restart), `restore` (roll back), and `status`. Default `notify` (announce only), set `update.mode` to `download` or `auto-stage` in config.yml to enable installs. Powered by [PluginPulse](https://github.com/darkstarworks/PluginPulse).
 
 ## [1.0.2] - 2026-06-30
 ### Fixed
-- **Approving a city gave no feedback until its baseline snapshot finished — so the `[approve]` link could be clicked several times, each firing another approval/snapshot.** Approving now responds instantly (chat link, `/ancient approve`, or the GUI button): a confirmation line, an animated busy indicator on the action bar while the snapshot is captured, then a result line. Repeat clicks while an approval is already running are ignored ("already approving #N…"), so a slow capture can no longer pile up duplicate approvals.
+- **Approving a city gave no feedback until its snapshot finished, so the `[approve]` link could be clicked several times, each starting another approval.** Approving now responds instantly (chat link, `/ancient approve`, or the GUI button): a confirmation line, an animated busy indicator on the action bar while the snapshot is captured, then a result line. Repeat clicks while an approval is already running are ignored ("already approving #N…"), so a slow capture can no longer pile up duplicate approvals.
 
 ## [1.0.1] - 2026-06-30
 ### Changed
-- **The auto-discovery alert now matches the `/ancient list` format — and acts straight from chat.** A newly-discovered city is announced as a `/ancient list`-style line: clickable green coordinates teleport you to the city, and a yellow **[approve]** (or **[menu]** once active) lets you approve/open it without typing — click the coords, look it over, click approve. Bold text was removed from both the alert and `/ancient list`; the colours stay, at normal weight.
+- **The discovery message now matches `/ancient list` and works straight from chat.** A newly-discovered city is announced as a `/ancient list`-style line: clickable green coordinates teleport you to the city, and a yellow **[approve]** (or **[menu]** once active) lets you approve/open it without typing, click the coords, look it over, click approve. Bold text was removed from both the alert and `/ancient list`; the colours stay, at normal weight.
 
 ## [1.0.0] - 2026-06-30
 ### Added
-- **Initial release.** Turns naturally-generated Ancient Cities into renewable, multiplayer-ready content. Standalone — no dependency on TrialChamberPro or any other plugin.
-- **Auto-discovery** — cities register themselves as their chunks load (plus a startup sweep over already-loaded chunks), using the server's own generated-structure data for exact bounds and precise chest provenance. Discovered cities are **pending** until an operator approves them (`discovery.require-approval`, default on); flip it off to make them active on contact.
-- **Per-player chest loot** — every player who opens a city container gets their own private copy (Lootr-style), so the second player in never finds gutted chests. Containers are never modified; a shared template is rolled once and operators can sneak-open a container to edit it.
-- **Per-city refresh cycle** — the first player to loot a city starts its refresh window (`loot.refresh-hours`, default 12); when it elapses, that city's loot is fresh again. Each city runs its own timer, so cities refresh staggered rather than all at once.
-- **Griefing protection** — bounds-based, per structure piece (expanded by `protection.piece-padding`): the structure is protected from breaking, placing, and explosions regardless of block type, while the natural Deep-Dark terrain between the ruins stays mineable.
-- **Snapshots** — capture a city's structure and restore it on demand, reverting griefing and sculk spread to a pristine state. A baseline is captured automatically on approval; an optional `snapshot.auto-reset-on-refresh` ties a restore to the loot cycle.
-- **Admin GUI** (`/ancient menu`) — browse cities, teleport, approve, capture/reset snapshots, see live occupancy, view per-player stats, inspect exactly what each player looted (with a visual diff against the original), and ban/unban — no YAML editing required.
-- **Per-player stats & loot bans** — containers looted, time in city, deaths, and denied griefing attempts, tracked per player per city; bar a player from looting a specific city.
-- **`/acp` command suite** — `menu`, `list`, `info`, `approve`, `delete`, `tp`, `open`, `check`, `snapshot`, `reset`, `ban`/`unban`/`bans`, `resetloot`, `reload`. `/ancient check` reports whether a block is protected independently of your operator bypass.
+- **Initial release.** Turns naturally-generated Ancient Cities into renewable, multiplayer-ready content. Standalone, no dependency on TrialChamberPro or any other plugin.
+- **Auto-discovery**, cities register themselves as their chunks load (plus a startup sweep over already-loaded chunks), using the server's own generated-structure data for exact bounds and precise chest provenance. Discovered cities are **pending** until an operator approves them (`discovery.require-approval`, default on); flip it off to make them active on contact.
+- **Per-player chest loot**, every player who opens a city container gets their own private copy (Lootr-style), so the second player in never finds gutted chests. Containers are never modified; a shared template is rolled once and operators can sneak-open a container to edit it.
+- **Per-city refresh cycle**, the first player to loot a city starts its refresh window (`loot.refresh-hours`, default 12); when it elapses, that city's loot is fresh again. Each city runs its own timer, so cities refresh staggered rather than all at once.
+- **Griefing protection**, bounds-based, per structure piece (expanded by `protection.piece-padding`): the structure is protected from breaking, placing, and explosions regardless of block type, while the natural Deep-Dark terrain between the ruins stays mineable.
+- **Snapshots**, capture a city's structure and restore it on demand, reverting griefing and sculk spread to a pristine state. A baseline is captured automatically on approval; an optional `snapshot.auto-reset-on-refresh` ties a restore to the loot cycle.
+- **Admin GUI** (`/ancient menu`), browse cities, teleport, approve, capture/reset snapshots, see live occupancy, view per-player stats, inspect exactly what each player looted (with a visual diff against the original), and ban/unban, no YAML editing required.
+- **Per-player stats & loot bans**, containers looted, time in city, deaths, and denied griefing attempts, tracked per player per city; bar a player from looting a specific city.
+- **`/acp` command suite**, `menu`, `list`, `info`, `approve`, `delete`, `tp`, `open`, `check`, `snapshot`, `reset`, `ban`/`unban`/`bans`, `resetloot`, `reload`. `/ancient check` reports whether a block is protected independently of your operator bypass.
 - **SQLite (default) or MySQL** storage with connection pooling; the MySQL driver is bundled.
 - **Paper / Folia / Purpur**, Java 21+. A separate `-mc26` jar targets Minecraft 26.x.
 
